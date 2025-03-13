@@ -1,37 +1,40 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "ptypes.h"
-#include "y.tab.h"
+#include "diff_tree.h"
+#include "parser.h"
 
-
+extern void yyerror(const char*s);
 %}
 
+%x S_GIT_HEADER S_GIT_INDEX S_FILE_DIFF_HEADER S_HUNK_HEADER S_HUNK S_HUNK_ONLY
+
   #ifdef DIFF
-%x GIT_HEADER GIT_INDEX FILE_DIFF_HEADER HUNK_HEADER
+  #define START INITIAL
   #else
-  #define YY_DECL int yylex_src(void);
+  #define YY_DECL int yylex_src(void)
+  #define START S_HUNK_ONLY
   #endif
-%s HUNK
 
 %%
 
-#ifdef DIFF
-<INITIAL,HUNK>^diff --git BEGIN(GIT_HEADER); return GIT_HEADER;
-<GIT_HEADER>{
+  BEGIN(START);
+
+<INITIAL,S_HUNK>^"diff --git" BEGIN(S_GIT_HEADER); return S_GIT_HEADER;
+<S_GIT_HEADER>{
   "a/"[^ \n]+  |
   "b/".*       {
     if ((yylval.string = strdup(yytext + 2)) == NULL)
       yyerror("Could not duplicate path string.");
-    BEGIN(GIT_INDEX);
+    BEGIN(S_GIT_INDEX);
     return PATH;
   }
 }
-<GIT_INDEX>{
-  ^"index "  return GIT_INDEX;
+<S_GIT_INDEX>{
+  ^"index "  return S_GIT_INDEX;
   [0-7]+$ {
     yylval.integer = atoi(yytext);
-    BEGIN(FILE_DIFF_HEADER);
+    BEGIN(S_FILE_DIFF_HEADER);
     return FILE_MODE;
   }
   [0-9a-f]+ {
@@ -42,35 +45,35 @@
   ".."
 }
 
-<INITIAL,FILE_DIFF_HEADER,HUNK>^"--- a/".* {
+<INITIAL,S_FILE_DIFF_HEADER,S_HUNK>^"--- a/".* {
   int pl = strlen("--- a/");
   if ((yylval.string = strndup(yytext + pl, yyleng - pl)) == NULL)
     yyerror("Could not duplicate path string.");
   return PATH;
 }
-<FILE_DIFF_HEADER>^"+++ b/".* {
+<S_FILE_DIFF_HEADER>^"+++ b/".* {
   int pl = strlen("+++ b/");
   if ((yylval.string = strndup(yytext + pl, yyleng - pl)) == NULL)
     yyerror("Could not duplicate path string.");
-  BEGIN(HUNK_HEADER);
+  BEGIN(S_HUNK_HEADER);
   return PATH;
 }
 
-<INITIAL,HUNK_HEADER,HUNK>^"@@ -" BEGIN(HUNK_HEADER); return HUNK_HEADER;
-<HUNK_HEADER>{
+<INITIAL,S_HUNK_HEADER,S_HUNK>^"@@ -" BEGIN(S_HUNK_HEADER); return S_HUNK_HEADER;
+<S_HUNK_HEADER>{
   [0-9]+  yylval.integer = atoi(yytext); return POSITION;
   ,
   " +"
-  " @@"[ \n] BEGIN(HUNK);
+  " @@"[ \n] BEGIN(S_HUNK);
 }
-#else
-  BEGIN(HUNK);
-#endif
-<HUNK>{
-  "[-"   return REMOVAL_OPEN;
-  "-]"   return REMOVAL_CLOSE;
-  "{+"  return ADDITION_OPEN;
-  "+}"  return ADDITION_CLOSE;
+  #else
+  BEGIN(S_HUNK);
+  #endif
+<S_HUNK>{
+  "[-" return REMOVAL_OPEN;
+  "-]" return REMOVAL_CLOSE;
+  "{+" return ADDITION_OPEN;
+  "+}" return ADDITION_CLOSE;
   "["  return '[';
   "]"  return ']';
   "{"  return '{';
@@ -85,4 +88,3 @@
 }
 
 %%
-

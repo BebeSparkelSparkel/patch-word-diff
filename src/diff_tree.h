@@ -1,44 +1,111 @@
+#ifndef DIFF_TREE_H
+#define DIFF_TREE_H
 
-typedef struct {
-  int count;
-  FilePatch
-} Patch;
+#include <stdint.h>
 
-enum {
-  Git,
-  FileDiff,
-} PatchType;
+typedef enum { Git, FileDiff } HeaderType;
 
 typedef char* Path;
-typedef char* Hash;
+
+typedef struct {
+  HeaderType type;
+  Path pathA, pathB;
+} FileDiffHeader;
+
+FileDiffHeader *newFileDiff(Path pathA, Path pathB);
+
+typedef char *Hash;
 typedef uint16_t FileMode;
 
 typedef struct {
+  HeaderType type;
   Path pathA, pathB;
   Hash indexA, indexB;
   FileMode fileMode;
-  FileDiff *fileDiff;
-} Git;
+  FileDiffHeader *fileDiff;
+} GitHeader;
 
-typedef struct {
-  Path pathA, pathB;
-  int count;
-  HunkHeader *hunkHeaders;
-} FileDiff;
+GitHeader *newGit( Path pathA, Path pathB, Hash indexA, Hash indexB, FileMode fileMode);
+
+typedef union {
+  GitHeader *git;
+  FileDiffHeader *fileDiff;
+} Header;
 
 typedef int Line;
 typedef int Column;
 
-struct {
+typedef struct {
   Line lineA, lineB;
   Column columnA, columnB;
-  int count;
-  Diff *diffs;
 } HunkHeader;
 
-typedef enum {Match, Addition, Removal} DiffType;
+HunkHeader *newHunkHeader(Line lineA, Column columnA, Line lineB, Column columnB);
+
+typedef enum { Newlines, Spaces, OpenSquare, CloseSquare, OpenCurly, CloseCurly, Word } ElementType;
+
+typedef union {
+  char *string;
+  int count;
+} ElementValue;
+
+ElementValue newElementString(char *string);
+
+ElementValue newElementCount(int count);
+
+ElementValue newElementNull();
+
+typedef struct {
+  ElementType type;
+  ElementValue value;
+} Element;
+
+Element *newElement(ElementType type, ElementValue value);
+
+typedef struct QueueElement QueueElement;
+// #define QUEUE_TYPE Element
+// #include "queue.h"
+// #undef QUEUE_TYPE
+
+typedef enum { Match, Addition, Removal } DiffType;
 typedef struct {
   DiffType type;
-  char *string;
+  QueueElement *value;
 } Diff;
 
+Diff *match(Element *value);
+
+Diff *addition(QueueElement *value);
+
+Diff *removal(QueueElement *value);
+
+typedef struct QueueDiff QueueDiff;
+// #define QUEUE_TYPE Diff
+// #include "queue.h"
+// #undef QUEUE_TYPE
+
+typedef struct Hunk {
+  HunkHeader *header;
+  QueueDiff *diffs;
+} Hunk;
+
+Hunk *newHunk(HunkHeader *header, QueueDiff *diffs);
+
+typedef struct QueueHunk QueueHunk;
+// #define QUEUE_TYPE Hunk
+// #include "queue.h"
+// #undef QUEUE_TYPE
+
+typedef struct {
+  Header header;
+  QueueHunk *hunks;
+} Patch;
+
+typedef struct QueuePatch QueuePatch;
+// #define QUEUE_TYPE Patch
+// #include "queue.h"
+// #undef QUEUE_TYPE
+
+Patch *newPatch(Header header, QueueHunk *hunks);
+
+#endif
