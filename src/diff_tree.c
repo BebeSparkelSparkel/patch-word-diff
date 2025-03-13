@@ -1,5 +1,6 @@
-#include "diff_tree.h"
 #include <stdlib.h>
+#include "diff_tree.h"
+#include "queue_types.h"
 
 FileDiffHeader *newFileDiff(Path pathA, Path pathB) {
   FileDiffHeader *x = malloc(sizeof(FileDiffHeader));

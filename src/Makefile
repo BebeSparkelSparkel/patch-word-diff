@@ -1,7 +1,7 @@
 CFLAGS = -Wall
 YFLAGS = -d
 
-QUEUE_MAPPINGS = Element:queue_types.h Diff:diff_tree.h Hunk:diff_tree.h Patch:diff_tree.h
+QUEUE_MAPPINGS = Element:diff_tree.h Diff:diff_tree.h Hunk:diff_tree.h Patch:diff_tree.h
 QUEUE_TYPES = $(foreach mapping,$(QUEUE_MAPPINGS),$(firstword $(subst :, ,$(mapping))))
 
 CORE_OBJS = diff_tree.o parser.o lexer.o

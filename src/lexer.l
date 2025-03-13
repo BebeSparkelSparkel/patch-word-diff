@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "diff_tree.h"
+#include "queue_types.h"
 #include "parser.h"
 
 extern void yyerror(const char*s);
