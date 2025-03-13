@@ -22,7 +22,7 @@ typedef struct NODE {
 } NODE;
 
 #define QUEUE MAKE_NAME(Queue, QUEUE_SUFFIX)
-typedef struct {
+typedef struct QUEUE {
   NODE *head;
   NODE *tail;
 } QUEUE;
@@ -35,8 +35,3 @@ void MAKE_NAME(push, QUEUE)(QUEUE *q, QUEUE_TYPE *x);
 
 QUEUE_TYPE *MAKE_NAME(pop, QUEUE)(QUEUE *q);
 
-// #undef QUEUE_TYPE
-// #undef QUEUE_SUFFIX
-// #undef MAKE_NAME_HELPER
-// #undef MAKE_NAME
-// #undef QUEUE

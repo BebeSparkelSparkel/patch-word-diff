@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "diff_tree.h"
+#include "queue_types.h"
 
 extern int yylex(void);
 %}

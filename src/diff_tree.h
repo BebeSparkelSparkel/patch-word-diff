@@ -1,6 +1,8 @@
 #ifndef DIFF_TREE_H
 #define DIFF_TREE_H
 
+#pragma push_macro("QUEUE_TYPE")
+
 #include <stdint.h>
 
 typedef enum { Git, FileDiff } HeaderType;
@@ -62,50 +64,40 @@ typedef struct {
 
 Element *newElement(ElementType type, ElementValue value);
 
-typedef struct QueueElement QueueElement;
-// #define QUEUE_TYPE Element
-// #include "queue.h"
-// #undef QUEUE_TYPE
+struct QueueElement;
 
 typedef enum { Match, Addition, Removal } DiffType;
 typedef struct {
   DiffType type;
-  QueueElement *value;
+  struct QueueElement *value;
 } Diff;
 
 Diff *match(Element *value);
 
-Diff *addition(QueueElement *value);
+Diff *addition(struct QueueElement *value);
 
-Diff *removal(QueueElement *value);
+Diff *removal(struct QueueElement *value);
 
-typedef struct QueueDiff QueueDiff;
-// #define QUEUE_TYPE Diff
-// #include "queue.h"
-// #undef QUEUE_TYPE
+struct QueueDiff;
 
 typedef struct Hunk {
   HunkHeader *header;
-  QueueDiff *diffs;
+  struct QueueDiff *diffs;
 } Hunk;
 
-Hunk *newHunk(HunkHeader *header, QueueDiff *diffs);
+Hunk *newHunk(HunkHeader *header, struct QueueDiff *diffs);
 
-typedef struct QueueHunk QueueHunk;
-// #define QUEUE_TYPE Hunk
-// #include "queue.h"
-// #undef QUEUE_TYPE
+struct QueueHunk;
 
 typedef struct {
   Header header;
-  QueueHunk *hunks;
+  struct QueueHunk *hunks;
 } Patch;
 
-typedef struct QueuePatch QueuePatch;
-// #define QUEUE_TYPE Patch
-// #include "queue.h"
-// #undef QUEUE_TYPE
+struct QueuePatch;
 
-Patch *newPatch(Header header, QueueHunk *hunks);
+Patch *newPatch(Header header, struct QueueHunk *hunks);
+
+#pragma pop_macro("QUEUE_TYPE")
 
 #endif
