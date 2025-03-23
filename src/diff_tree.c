@@ -1,6 +1,7 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "diff_tree.h"
-#include "queue_types.h"
+#include <assert.h>
 
 FileDiffHeader *newFileDiff(Path pathA, Path pathB) {
   FileDiffHeader *x = malloc(sizeof(FileDiffHeader));
@@ -14,7 +15,7 @@ GitHeader *newGit(
   Hash indexA, Hash indexB,
   FileMode fileMode) {
   GitHeader *x = malloc(sizeof(GitHeader));
-  x->type = Git;
+  x->type = GitHeaderT;
   x->pathA = pathA;
   x->pathB = pathB;
   x->indexA = indexA;
@@ -32,63 +33,138 @@ HunkHeader *newHunkHeader(Line lineA, Column columnA, Line lineB, Column columnB
   return x;
 }
 
-ElementValue newElementString(char *string) {
-  ElementValue x;
-  x.string = string;
-  return x;
-}
+//Element  *newElementString(ElementType type, char *string) {
+//  Element *x = malloc(sizeof(Element));
+//  x->type = type;
+//  x->value.string = string;
+//  return x;
+//}
 
-ElementValue newElementCount(int count) {
-  ElementValue x;
-  x.count = count;
-  return x;
-}
-
-ElementValue newElementNull() {
-  ElementValue x;
-  x.string = NULL;
-  return x;
-}
-
-Element *newElement(ElementType type, ElementValue value) {
+Element  *newElementCount(ElementType type, int count) {
   Element *x = malloc(sizeof(Element));
   x->type = type;
-  x->value = value;
+  x->value.count = count;
+  return x;
+}
+
+Element  *newElement(ElementType type) {
+  Element *x = malloc(sizeof(Element));
+  x->type = type;
   return x;
 }
 
 Diff *match(Element *value) {
+  assert(value != NULL);
   Diff *x = malloc(sizeof(Diff));
   x->type = Match;
-  x->value = newOneQueueElement(value);
+  x->value = newNodeElement(value);
   return x;
 }
 
-Diff *addition(QueueElement *value) {
+Diff *addition(NodeElement *value) {
+  assert(value != NULL);
   Diff *x = malloc(sizeof(Diff));
   x->type = Addition;
   x->value = value;
   return x;
 }
 
-Diff *removal(QueueElement *value) {
+Diff *removal(NodeElement *value) {
+  assert(value != NULL);
   Diff *x = malloc(sizeof(Diff));
   x->type = Removal;
   x->value = value;
   return x;
 }
 
-Hunk *newHunk(HunkHeader *header, QueueDiff *diffs) {
+Hunk *newHunk(HunkHeader *header, NodeDiff *diffs) {
   Hunk *x = malloc(sizeof(Hunk));
   x->header = header;
   x->diffs = diffs;
   return x;
 }
 
-Patch *newPatch(Header header, QueueHunk *hunks) {
+Patch *newPatch(PatchHeader *header, NodeHunk *hunks) {
   Patch *x = malloc(sizeof(Patch));
   x->header = header;
   x->hunks = hunks;
   return x;
 }
 
+#define SLL_TYPE FileDiffHeader
+#define JSON_OBJ FILEDIFFHEADER_FIELDS
+#include "json.c"
+#undef SLL_TYPE
+#undef JSON_OBJ
+
+#define SLL_TYPE GitHeader
+#define JSON_OBJ GITHEADER_FIELDS
+#include "json.c"
+#undef SLL_TYPE
+#undef JSON_OBJ
+
+#define SLL_TYPE PatchHeader
+#define JSON_UNION PATCHHEADER_FIELDS
+#include "json.c"
+#undef SLL_TYPE
+#undef JSON_UNION
+
+#define SLL_TYPE HunkHeader
+#define JSON_OBJ HUNKHEADER_FIELDS
+#include "json.c"
+#undef SLL_TYPE
+#undef JSON_OBJ
+
+#define SLL_TYPE Element
+#include "json.c"
+#undef SLL_TYPE
+
+StringWriter *toJSON_Element(Element *e) {
+  StringBuilder b; initStringBuilder(&b);
+  char *dst;
+  int *length;
+  appendDataString(&b,
+    JSON_OBJ_OPEN
+    "\"type\""
+    JSON_OBJ_COLON
+    "\"Element\""
+    JSON_OBJ_COMMA
+    "\"element-type\""
+    JSON_OBJ_COLON
+  );
+  switch (e->type) {
+#define ELEMENT_F(pattern, enumId, handler) \
+    case enumId: \
+      appendDataString(&b, JSON_STRINGIFY(enumId)); \
+      handler \
+      break;
+#define ELEMENT_COUNT \
+      appendHeapString(&b, asprintf(&dst, "%d", e->value.count), dst);
+#define ELEMENT_STRING \
+      appendHeapString(&b, e->value.string->header.length, e->value.string->string);
+    ELEMENT_MAP( , ELEMENT_COUNT, ELEMENT_STRING, , ELEMENT_F)
+#undef ELEMENT_F
+#undef ELEMENT_COUNT
+#undef ELEMENT_STRING
+  }
+  appendDataString(&b, JSON_OBJ_CLOSE);
+  return finalizeBuilder(&b);
+}
+
+#define SLL_TYPE Diff
+#define JSON_OBJ DIFF_FIELDS
+#include "json.c"
+#undef SLL_TYPE
+#undef JSON_OBJ
+
+#define SLL_TYPE Hunk
+#define JSON_OBJ HUNK_FIELDS
+#include "json.c"
+#undef SLL_TYPE
+#undef JSON_OBJ
+
+#define SLL_TYPE Patch
+#define JSON_OBJ PATCH_FIELDS
+#include "json.c"
+#undef SLL_TYPE
+#undef JSON_OBJ

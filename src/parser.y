@@ -1,9 +1,16 @@
 %{
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include "diff_tree.h"
-#include "queue_types.h"
+#define INCLUDE #include <stdlib.h>
+INCLUDE
+#undef INCLUDE
+#define INCLUDE #include <stdio.h>
+INCLUDE
+#undef INCLUDE
+#define INCLUDE #include <stdint.h>
+INCLUDE
+#undef INCLUDE
+#define INCLUDE #include "diff_tree.h"
+INCLUDE
+#undef INCLUDE
 
 extern int yylex(void);
 %}
@@ -15,7 +22,7 @@ extern int yylex(void);
 
   QueuePatch *patches;
   Patch *patch;
-  Header header;
+  PatchHeader patchHeader;
   QueueHunk *hunks;
   FileDiffHeader *fileDiffHeader;
   GitHeader *gitHeader;
@@ -48,7 +55,7 @@ extern int yylex(void);
 
 %type<patches> patches
 %type<patch> patch
-%type<header> header
+%type<patchHeader> patchHeader
 %type<hunks> hunks
 %type<fileDiffHeader> fileDiffHeader
 %type<gitHeader> gitHeader
@@ -64,9 +71,9 @@ extern int yylex(void);
 patches: patch         { $$ = newOneQueuePatch($1); }
        | patches patch { pushQueuePatch($$, $2); }
        ;
-patch: header hunks { $$ = newPatch($1, $2); };
+patch: patchHeader hunks { $$ = newPatch($1, $2); };
 
-header: gitHeader fileDiffHeader { $$.git->fileDiff = $2; }
+patchHeader: gitHeader fileDiffHeader { $$.git->fileDiff = $2; }
       | fileDiffHeader { $$.fileDiff = $1; }
       ;
 gitHeader: GIT_HEADER PATH PATH GIT_INDEX HASH HASH FILE_MODE
@@ -89,14 +96,22 @@ diff: element { $$ = match($1); }
 elements: element { $$ = newOneQueueElement($1); }
         | elements element { pushQueueElement($$, $2); }
         ;
-element: '\n' { $$ = newElement( Newlines,    newElementCount($1)   ); }
-       | ' '  { $$ = newElement( Spaces,      newElementCount($1)   ); }
-       | '['  { $$ = newElement( OpenSquare,  newElementNull() ); }
-       | ']'  { $$ = newElement( CloseSquare, newElementNull() ); }
-       | '{'  { $$ = newElement( OpenCurly,   newElementNull() ); }
-       | '}'  { $$ = newElement( CloseCurly,  newElementNull() ); }
-       | WORD { $$ = newElement( Word,        newElementString($1)   ); }
-       ;
+
+#include "element.h"
+element: ELEMENT_GRAMMAR ;
+//element: '['  { $$ = newElement( OpenSquare,     newElementNull()     ); }
+//       | ']'  { $$ = newElement( CloseSquare,    newElementNull()     ); }
+//       | '{'  { $$ = newElement( OpenCurly,      newElementNull()     ); }
+//       | '}'  { $$ = newElement( CloseCurly,     newElementNull()     ); }
+//       | '\n' { $$ = newElement( Newlines,       newElementCount($1)  ); }
+//       | ' '  { $$ = newElement( Spaces,         newElementCount($1)  ); }
+//       | '\b' { $$ = newElement( Backspaces,     newElementCount($1)  ); }
+//       | '\f' { $$ = newElement( Formfeeds,      newElementCount($1)  ); }
+//       | '\t' { $$ = newElement( HorizontalTabs, newElementCount($1)  ); }
+//       | '\\' { $$ = newElement( ReverseSolidus, newElementNull()     ); }
+//       | '"'  { $$ = newElement( DoubleQuote,    newElementNull()     ); }
+//       | WORD { $$ = newElement( Word,           newElementString($1) ); }
+//       ;
 
 %%
 

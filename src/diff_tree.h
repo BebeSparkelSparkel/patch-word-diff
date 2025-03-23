@@ -1,103 +1,153 @@
 #ifndef DIFF_TREE_H
 #define DIFF_TREE_H
 
-#pragma push_macro("QUEUE_TYPE")
+#define FIELD(type, name) type name;
+#define FIELD_PTR(type, name) type *name;
+#define FIELD_SLL(type, name) Node##type *name;
+#define FIELD_UNION(type, enum, name) type name;
 
 #include <stdint.h>
+#include "string_builder.h"
+#include "element.h"
 
-typedef enum { Git, FileDiff } HeaderType;
+typedef enum { GitHeaderT, FileDiffHeaderT } PatchHeaderType;
 
 typedef char* Path;
 
+#define FILEDIFFHEADER_FIELDS \
+  FIELD(Path, pathA) \
+  FIELD(Path, pathB)
 typedef struct {
-  HeaderType type;
-  Path pathA, pathB;
+  PatchHeaderType type;
+  FILEDIFFHEADER_FIELDS
 } FileDiffHeader;
 
 FileDiffHeader *newFileDiff(Path pathA, Path pathB);
 
+#define SLL_TYPE FileDiffHeader
+#include "json.h"
+#undef SLL_TYPE
+
 typedef char *Hash;
 typedef uint16_t FileMode;
 
+#define GITHEADER_FIELDS \
+  FIELD(Path, pathA) \
+  FIELD(Path, pathB) \
+  FIELD(Hash, indexA) \
+  FIELD(Hash, indexB) \
+  FIELD(FileMode, fileMode) \
+  FIELD_PTR(FileDiffHeader, fileDiff)
 typedef struct {
-  HeaderType type;
-  Path pathA, pathB;
-  Hash indexA, indexB;
-  FileMode fileMode;
-  FileDiffHeader *fileDiff;
+  PatchHeaderType type;
+  GITHEADER_FIELDS
 } GitHeader;
 
 GitHeader *newGit( Path pathA, Path pathB, Hash indexA, Hash indexB, FileMode fileMode);
 
+#define SLL_TYPE GitHeader
+#include "json.h"
+#undef SLL_TYPE
+
+#define PATCHHEADER_FIELDS \
+  FIELD_UNION(GitHeader, GitHeaderT, git) \
+  FIELD_UNION(FileDiffHeader, FileDiffHeaderT, fileDiff)
 typedef union {
-  GitHeader *git;
-  FileDiffHeader *fileDiff;
-} Header;
+  PatchHeaderType type;
+  PATCHHEADER_FIELDS
+} PatchHeader;
+
+#define SLL_TYPE PatchHeader
+#include "json.h"
+#undef SLL_TYPE
 
 typedef int Line;
 typedef int Column;
 
+#define HUNKHEADER_FIELDS \
+  FIELD(Line, lineA) \
+  FIELD(Line, lineB) \
+  FIELD(Column, columnA) \
+  FIELD(Column, columnB)
 typedef struct {
-  Line lineA, lineB;
-  Column columnA, columnB;
+  HUNKHEADER_FIELDS
 } HunkHeader;
 
 HunkHeader *newHunkHeader(Line lineA, Column columnA, Line lineB, Column columnB);
 
-typedef enum { Newlines, Spaces, OpenSquare, CloseSquare, OpenCurly, CloseCurly, Word } ElementType;
+#define SLL_TYPE HunkHeader
+#include "json.h"
+#undef SLL_TYPE
+
+typedef enum { ELEMENT_ENUM } ElementType;
 
 typedef union {
-  char *string;
+  String *string;
   int count;
 } ElementValue;
-
-ElementValue newElementString(char *string);
-
-ElementValue newElementCount(int count);
-
-ElementValue newElementNull();
 
 typedef struct {
   ElementType type;
   ElementValue value;
 } Element;
 
-Element *newElement(ElementType type, ElementValue value);
+//Element  *newElementString(ElementType, char *);
 
-struct QueueElement;
+Element  *newElementCount(ElementType, int);
+
+Element  *newElement(ElementType);
+
+#define SLL_TYPE Element
+#include "json.h"
+#undef SLL_TYPE
 
 typedef enum { Match, Addition, Removal } DiffType;
+
+#define DIFF_FIELDS \
+  FIELD_SLL(Element, value)
 typedef struct {
   DiffType type;
-  struct QueueElement *value;
+  DIFF_FIELDS
 } Diff;
 
-Diff *match(Element *value);
+Diff *match(Element *);
 
-Diff *addition(struct QueueElement *value);
+Diff *addition(NodeElement *);
 
-Diff *removal(struct QueueElement *value);
+Diff *removal(NodeElement *);
 
-struct QueueDiff;
+#define SLL_TYPE Diff
+#include "json.h"
+#undef SLL_TYPE
 
+#define HUNK_FIELDS \
+  FIELD_PTR(HunkHeader, header) \
+  FIELD_SLL(Diff, diffs)
 typedef struct Hunk {
-  HunkHeader *header;
-  struct QueueDiff *diffs;
+  HUNK_FIELDS
 } Hunk;
 
-Hunk *newHunk(HunkHeader *header, struct QueueDiff *diffs);
+Hunk *newHunk(HunkHeader *, NodeDiff *);
 
-struct QueueHunk;
+#define SLL_TYPE Hunk
+#include "json.h"
+#undef SLL_TYPE
 
+#define PATCH_FIELDS \
+  FIELD_PTR(PatchHeader, header) \
+  FIELD_SLL(Hunk, hunks)
 typedef struct {
-  Header header;
-  struct QueueHunk *hunks;
+//  PatchHeader *header;
+//  NodeHunk *hunks;
+  PATCH_FIELDS
 } Patch;
 
-struct QueuePatch;
+Patch *newPatch(PatchHeader *, NodeHunk *);
 
-Patch *newPatch(Header header, struct QueueHunk *hunks);
+typedef struct NodePatch NodePatch;
 
-#pragma pop_macro("QUEUE_TYPE")
+#define SLL_TYPE Patch
+#include "json.h"
+#undef SLL_TYPE
 
 #endif
