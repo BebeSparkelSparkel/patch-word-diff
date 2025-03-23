@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "diff_tree.h"
-#include "queue_types.h"
 #include "parser.h"
 
 extern void yyerror(const char*s);
@@ -81,7 +80,12 @@ extern void yyerror(const char*s);
   "}"  return '}';
   \n+ yylval.integer = yyleng; return '\n';
   \ + yylval.integer = yyleng; return ' ';
-  [^[\]{}\n ]+  {
+  \b+ yylval.integer = yyleng; return '\b';
+  \f+ yylval.integer = yyleng; return '\f';
+  \t+ yylval.integer = yyleng; return '\t';
+  \\  return '\\';
+  \"  return '"';
+  [^[\]{}\n \\\"\b\f\t]+  {
     if ((yylval.string = strdup(yytext)) == NULL)
       yyerror("Could not duplicate hunk string.");
     return WORD;
