@@ -1,61 +1,63 @@
 #ifndef DIFF_TREE_H
 #define DIFF_TREE_H
 
-#define FIELD(type, name) type name;
-#define FIELD_PTR(type, name) type *name;
-#define FIELD_SLL(type, name) Node##type *name;
-#define FIELD_UNION(type, enum, name) type name;
-
 #include <stdint.h>
 #include "string_builder.h"
 #include "element.h"
+#include "new.h"
 
-typedef enum { GitHeaderT, FileDiffHeaderT } PatchHeaderType;
+typedef enum { FileDiffHeaderT, GitHeaderT } PatchHeaderType;
 
-typedef char* Path;
+typedef char Path;
 
-#define FILEDIFFHEADER_FIELDS \
-  FIELD(Path, pathA) \
-  FIELD(Path, pathB)
-typedef struct {
-  PatchHeaderType type;
-  FILEDIFFHEADER_FIELDS
-} FileDiffHeader;
+#define SLL_TYPE Path
+#include "json.h"
+#undef SLL_TYPE
 
-FileDiffHeader *newFileDiff(Path pathA, Path pathB);
+#define FILEDIFFHEADER_FIELDS(fieldType, fieldHeader, field, fieldPtr, fieldList, fieldUnion, infix) \
+  fieldType(PatchHeaderType, FileDiffHeaderT, infix) \
+  fieldPtr(Path, pathA, infix) \
+  fieldPtr(Path, pathB, EMPTY)
+
+TYPEDEF(FileDiffHeader, struct, FILEDIFFHEADER_FIELDS)
+
+NEW_FORWARD(FileDiffHeader, FILEDIFFHEADER_FIELDS);
 
 #define SLL_TYPE FileDiffHeader
 #include "json.h"
 #undef SLL_TYPE
 
-typedef char *Hash;
+typedef char Hash;
+
+#define SLL_TYPE Hash
+#include "json.h"
+#undef SLL_TYPE
+
 typedef uint16_t FileMode;
 
-#define GITHEADER_FIELDS \
-  FIELD(Path, pathA) \
-  FIELD(Path, pathB) \
-  FIELD(Hash, indexA) \
-  FIELD(Hash, indexB) \
-  FIELD(FileMode, fileMode) \
-  FIELD_PTR(FileDiffHeader, fileDiff)
-typedef struct {
-  PatchHeaderType type;
-  GITHEADER_FIELDS
-} GitHeader;
+#define GITHEADER_FIELDS(fieldType, fieldHeader, field, fieldPtr, fieldList, fieldUnion, infix) \
+  fieldType(PatchHeaderType, GitHeaderT, infix) \
+  fieldPtr(Path, pathA, infix) \
+  fieldPtr(Path, pathB, infix) \
+  fieldPtr(Hash, indexA, infix) \
+  fieldPtr(Hash, indexB, infix) \
+  field(FileMode, fileMode, infix) \
+  fieldPtr(FileDiffHeader, fileDiff, EMPTY)
 
-GitHeader *newGit( Path pathA, Path pathB, Hash indexA, Hash indexB, FileMode fileMode);
+TYPEDEF(GitHeader, struct, GITHEADER_FIELDS)
+
+NEW_FORWARD(GitHeader, GITHEADER_FIELDS);
 
 #define SLL_TYPE GitHeader
 #include "json.h"
 #undef SLL_TYPE
 
-#define PATCHHEADER_FIELDS \
-  FIELD_UNION(GitHeader, GitHeaderT, git) \
-  FIELD_UNION(FileDiffHeader, FileDiffHeaderT, fileDiff)
-typedef union {
-  PatchHeaderType type;
-  PATCHHEADER_FIELDS
-} PatchHeader;
+#define PATCHHEADER_FIELDS(fieldType, fieldHeader, field, fieldPtr, fieldList, fieldUnion, infix) \
+  fieldHeader(PatchHeaderType, infix) \
+  fieldUnion(GitHeader, GitHeaderT, git, infix) \
+  fieldUnion(FileDiffHeader, FileDiffHeaderT, fileDiff, EMPTY)
+
+TYPEDEF(PatchHeader, union, PATCHHEADER_FIELDS)
 
 #define SLL_TYPE PatchHeader
 #include "json.h"
@@ -64,16 +66,15 @@ typedef union {
 typedef int Line;
 typedef int Column;
 
-#define HUNKHEADER_FIELDS \
-  FIELD(Line, lineA) \
-  FIELD(Line, lineB) \
-  FIELD(Column, columnA) \
-  FIELD(Column, columnB)
-typedef struct {
-  HUNKHEADER_FIELDS
-} HunkHeader;
+#define HUNKHEADER_FIELDS(fieldType, fieldHeader, field, fieldPtr, fieldList, fieldUnion, infix) \
+  field(Line, lineA, infix) \
+  field(Line, lineB, infix) \
+  field(Column, columnA, infix) \
+  field(Column, columnB, EMPTY)
 
-HunkHeader *newHunkHeader(Line lineA, Column columnA, Line lineB, Column columnB);
+TYPEDEF(HunkHeader, struct, HUNKHEADER_FIELDS)
+
+NEW_FORWARD(HunkHeader, HUNKHEADER_FIELDS);
 
 #define SLL_TYPE HunkHeader
 #include "json.h"
@@ -103,12 +104,11 @@ Element  *newElement(ElementType);
 
 typedef enum { Match, Addition, Removal } DiffType;
 
-#define DIFF_FIELDS \
-  FIELD_SLL(Element, value)
-typedef struct {
-  DiffType type;
-  DIFF_FIELDS
-} Diff;
+#define DIFF_FIELDS(fieldType, fieldHeader, field, fieldPtr, fieldList, fieldUnion, infix) \
+  field(DiffType, type, infix) \
+  fieldList(Element, value, EMPTY)
+
+TYPEDEF(Diff, struct, DIFF_FIELDS);
 
 Diff *match(Element *);
 
@@ -120,31 +120,25 @@ Diff *removal(NodeElement *);
 #include "json.h"
 #undef SLL_TYPE
 
-#define HUNK_FIELDS \
-  FIELD_PTR(HunkHeader, header) \
-  FIELD_SLL(Diff, diffs)
-typedef struct Hunk {
-  HUNK_FIELDS
-} Hunk;
+#define HUNK_FIELDS(fieldType, fieldHeader, field, fieldPtr, fieldList, fieldUnion, infix) \
+  fieldPtr(HunkHeader, header, infix) \
+  fieldList(Diff, diffs, EMPTY)
 
-Hunk *newHunk(HunkHeader *, NodeDiff *);
+TYPEDEF(Hunk, struct, HUNK_FIELDS)
+
+NEW_FORWARD(Hunk, HUNK_FIELDS);
 
 #define SLL_TYPE Hunk
 #include "json.h"
 #undef SLL_TYPE
 
-#define PATCH_FIELDS \
-  FIELD_PTR(PatchHeader, header) \
-  FIELD_SLL(Hunk, hunks)
-typedef struct {
-//  PatchHeader *header;
-//  NodeHunk *hunks;
-  PATCH_FIELDS
-} Patch;
+#define PATCH_FIELDS(fieldType, fieldHeader, field, fieldPtr, fieldList, fieldUnion, infix) \
+  fieldPtr(PatchHeader, header, infix) \
+  fieldList(Hunk, hunks, EMPTY)
 
-Patch *newPatch(PatchHeader *, NodeHunk *);
+TYPEDEF(Patch, struct, PATCH_FIELDS)
 
-typedef struct NodePatch NodePatch;
+NEW_FORWARD(Patch, PATCH_FIELDS);
 
 #define SLL_TYPE Patch
 #include "json.h"

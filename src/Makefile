@@ -15,7 +15,7 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
-diff_tree.h: string_builder.h element.h json.h
+diff_tree.h: string_builder.h element.h json.h new.h
 
 diff_tree.o: diff_tree.h json.c
 
