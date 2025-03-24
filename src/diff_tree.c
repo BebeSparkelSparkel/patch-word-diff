@@ -3,35 +3,38 @@
 #include "diff_tree.h"
 #include <assert.h>
 
-FileDiffHeader *newFileDiff(Path pathA, Path pathB) {
-  FileDiffHeader *x = malloc(sizeof(FileDiffHeader));
-  x->pathA = pathA;
-  x->pathB = pathB;
-  return x;
-}
+//FileDiffHeader *newFileDiffHeader(Path pathA, Path pathB) {
+//  FileDiffHeader *x = malloc(sizeof(FileDiffHeader));
+//  x->pathA = pathA;
+//  x->pathB = pathB;
+//  return x;
+//}
+NEW_INSTANCE(FileDiffHeader, FILEDIFFHEADER_FIELDS)
 
-GitHeader *newGit(
-  Path pathA, Path pathB,
-  Hash indexA, Hash indexB,
-  FileMode fileMode) {
-  GitHeader *x = malloc(sizeof(GitHeader));
-  x->type = GitHeaderT;
-  x->pathA = pathA;
-  x->pathB = pathB;
-  x->indexA = indexA;
-  x->indexB = indexB;
-  x->fileMode = fileMode;
-  return x;
-}
+//GitHeader *newGitHeader(
+//  Path pathA, Path pathB,
+//  Hash indexA, Hash indexB,
+//  FileMode fileMode) {
+//  GitHeader *x = malloc(sizeof(GitHeader));
+//  x->type = GitHeaderT;
+//  x->pathA = pathA;
+//  x->pathB = pathB;
+//  x->indexA = indexA;
+//  x->indexB = indexB;
+//  x->fileMode = fileMode;
+//  return x;
+//}
+NEW_INSTANCE(GitHeader, GITHEADER_FIELDS)
 
-HunkHeader *newHunkHeader(Line lineA, Column columnA, Line lineB, Column columnB) {
-  HunkHeader *x = malloc(sizeof(HunkHeader));
-  x->lineA = lineA;
-  x->lineB = lineB;
-  x->columnA = columnA;
-  x->columnB = columnB;
-  return x;
-}
+//HunkHeader *newHunkHeader(Line lineA, Column columnA, Line lineB, Column columnB) {
+//  HunkHeader *x = malloc(sizeof(HunkHeader));
+//  x->lineA = lineA;
+//  x->lineB = lineB;
+//  x->columnA = columnA;
+//  x->columnB = columnB;
+//  return x;
+//}
+NEW_INSTANCE(HunkHeader, HUNKHEADER_FIELDS)
 
 //Element  *newElementString(ElementType type, char *string) {
 //  Element *x = malloc(sizeof(Element));
@@ -77,19 +80,21 @@ Diff *removal(NodeElement *value) {
   return x;
 }
 
-Hunk *newHunk(HunkHeader *header, NodeDiff *diffs) {
-  Hunk *x = malloc(sizeof(Hunk));
-  x->header = header;
-  x->diffs = diffs;
-  return x;
-}
+//Hunk *newHunk(HunkHeader *header, NodeDiff *diffs) {
+//  Hunk *x = malloc(sizeof(Hunk));
+//  x->header = header;
+//  x->diffs = diffs;
+//  return x;
+//}
+NEW_INSTANCE(Hunk, HUNK_FIELDS)
 
-Patch *newPatch(PatchHeader *header, NodeHunk *hunks) {
-  Patch *x = malloc(sizeof(Patch));
-  x->header = header;
-  x->hunks = hunks;
-  return x;
-}
+//Patch *newPatch(PatchHeader *header, NodeHunk *hunks) {
+//  Patch *x = malloc(sizeof(Patch));
+//  x->header = header;
+//  x->hunks = hunks;
+//  return x;
+//}
+NEW_INSTANCE(Patch, PATCH_FIELDS)
 
 #define SLL_TYPE FileDiffHeader
 #define JSON_OBJ FILEDIFFHEADER_FIELDS
@@ -119,11 +124,10 @@ Patch *newPatch(PatchHeader *header, NodeHunk *hunks) {
 #include "json.c"
 #undef SLL_TYPE
 
-StringWriter *toJSON_Element(Element *e) {
-  StringBuilder b; initStringBuilder(&b);
+void toJSON_Element(StringBuilder *b, Element *e) {
   char *dst;
   int *length;
-  appendDataString(&b,
+  appendDataString(b,
     JSON_OBJ_OPEN
     "\"type\""
     JSON_OBJ_COLON
@@ -135,20 +139,19 @@ StringWriter *toJSON_Element(Element *e) {
   switch (e->type) {
 #define ELEMENT_F(pattern, enumId, handler) \
     case enumId: \
-      appendDataString(&b, JSON_STRINGIFY(enumId)); \
+      appendDataString(b, JSON_STRINGIFY(enumId)); \
       handler \
       break;
 #define ELEMENT_COUNT \
-      appendHeapString(&b, asprintf(&dst, "%d", e->value.count), dst);
+      appendHeapString(b, asprintf(&dst, "%d", e->value.count), dst);
 #define ELEMENT_STRING \
-      appendHeapString(&b, e->value.string->header.length, e->value.string->string);
+      appendHeapString(b, e->value.string->header.length, e->value.string->string);
     ELEMENT_MAP( , ELEMENT_COUNT, ELEMENT_STRING, , ELEMENT_F)
 #undef ELEMENT_F
 #undef ELEMENT_COUNT
 #undef ELEMENT_STRING
   }
-  appendDataString(&b, JSON_OBJ_CLOSE);
-  return finalizeBuilder(&b);
+  appendDataString(b, JSON_OBJ_CLOSE);
 }
 
 #define SLL_TYPE Diff
