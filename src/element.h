@@ -20,7 +20,6 @@
 #define ELEMENT_GRAMMAR ELEMENT_MAP(newElementNull(), newElementCount($1), newElementString($1), |, ELEMENT_GRAMMAR_F) 
 
 #define ELEMENT_ENUM_F(pattern, enumId, valueConstructor) enumId
-#define COMMA ,
 #define ELEMENT_ENUM ELEMENT_MAP(, , , COMMA, ELEMENT_ENUM_F) 
 
 #endif
