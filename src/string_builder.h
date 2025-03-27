@@ -1,9 +1,9 @@
 #ifndef STRING_BUILDER_H
 #define STRING_BUILDER_H
 
-#pragma push_macro("SLL_TYPE")
-
+#include <stdlib.h>
 #include <stdbool.h>
+#include "singly_linked_list.h"
 
 typedef enum { StringT, StringBuilderT, InterspersedStringT, StringWriterT } StringType;
 
@@ -24,37 +24,34 @@ String *newDataString(size_t length, char *string);
 
 typedef union Strings Strings;
 
-#define SLL_TYPE Strings
-#include "singly_linked_list.h"
-#undef SLL_TYPE
+SLL_H(Strings);
 
 typedef struct {
   StringHeader header;
   size_t count;
-  SLLBuilderStrings *strings;
+  SLLBuilder_Strings strings;
 } StringBuilder;
 
 void initStringBuilder(StringBuilder *b);
-//StringBuilder *newStringBuilder();
 
 void appendHeapString(StringBuilder *b, size_t length, char *string);
 
 void appendDataString(StringBuilder *b, char *string);
 
-//void appendString(StringBuilder *b, Strings *string);
+void appendString(StringBuilder *b, Strings *string);
 
 /* writeIntersperse: if non-zero then write the toIntersperse string */
 typedef struct {
   StringHeader header;
   bool writeIntersperse;
   Strings *toIntersperse;
-  NodeStrings *strings;
+  SLLNode_Strings *strings;
 } InterspersedString;
 
 typedef struct {
   size_t length;
   size_t count;
-  SLLBuilderStrings *strings;
+  SLLBuilder_Strings strings;
 } StringListBuilder;
 
 void initStringListBuilder(StringListBuilder *);
@@ -62,7 +59,7 @@ void initStringListBuilder(StringListBuilder *);
 typedef struct StringWriter {
   StringHeader header;
   size_t offset;
-  NodeStrings *strings;
+  SLLNode_Strings *strings;
 } StringWriter;
 
 void appendStringWriter(StringBuilder *b, StringWriter *string);
@@ -82,7 +79,12 @@ typedef union Strings {
   StringWriter writer;
 } Strings;
 
+Strings *asStrings_String(String *s);
+
+Strings *asStrings_InterspersedString(InterspersedString *i);
+
+Strings *asStrings_StringWriter(StringWriter *w);
+
 size_t materializeString(char *buffer, size_t bufRemaining, StringWriter *w);
 
-#pragma pop_macro("SLL_TYPE")
 #endif
