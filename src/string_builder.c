@@ -24,6 +24,13 @@ String *newDataString(size_t length, char *string) {
   return s;
 }
 
+TO_JSON_FORWARD(String) {
+  appendDataString(b, "\"");
+  appendHeapString(b, x->header.length, x->string);
+  free(x);
+  appendDataString(b, "\"");
+}
+
 SLL_C(Strings);
 
 void initStringBuilder(StringBuilder *b) {

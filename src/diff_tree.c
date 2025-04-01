@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "diff_tree.h"
+#include "json_common.h"
 #include <assert.h>
 
 TO_JSON_HEAP_STRING(Path);
@@ -39,7 +40,7 @@ Element  *newElement(ElementType type) {
   return x;
 }
 
-NEW_NODE(Element);
+SLL_C(Element);
 
 SLL_FOLDL(Element, StringListBuilder);
 
@@ -86,8 +87,6 @@ TO_JSON_OBJ(HunkHeader, HUNKHEADER_FIELDS);
 TO_JSON_LIST(Element);
 
 void toJSON_Element(StringBuilder *b, Element *e) {
-  char *dst;
-  int *length;
   appendDataString(b,
     JSON_OBJ_OPEN
     "\"type\""
@@ -98,19 +97,31 @@ void toJSON_Element(StringBuilder *b, Element *e) {
     JSON_OBJ_COLON
   );
   switch (e->type) {
-#define ELEMENT_F(pattern, enumId, handler) \
-    case enumId: \
-      appendDataString(b, JSON_STRINGIFY(enumId)); \
-      handler \
+#define JE_NULL(enumerator, ...) \
+    case enumerator: \
+      appendDataString(b, JSON_STRINGIFY(enumerator)); \
       break;
-#define ELEMENT_COUNT \
-      appendHeapString(b, asprintf(&dst, "%d", e->value.count), dst);
-#define ELEMENT_STRING \
-      appendHeapString(b, e->value.string->header.length, e->value.string->string);
-    ELEMENT_MAP( , ELEMENT_COUNT, ELEMENT_STRING, , ELEMENT_F)
-#undef ELEMENT_F
-#undef ELEMENT_COUNT
-#undef ELEMENT_STRING
+#define JE_COUNT(enumerator, ...) \
+    case enumerator: \
+      appendDataString(b, \
+        JSON_STRINGIFY(enumerator) \
+        JSON_OBJ_COMMA \
+        "\"count\"" \
+        JSON_OBJ_COLON \
+      ); \
+      toJSON_int(b, &e->value.count); \
+      break;
+#define JE_STRING(enumerator, ...) \
+    case enumerator: \
+      appendDataString(b, \
+        JSON_STRINGIFY(enumerator) \
+        JSON_OBJ_COMMA \
+        "\"string\"" \
+        JSON_OBJ_COLON \
+      ); \
+      toJSON_String(b, e->value.string); \
+      break;
+    ELEMENT_MAP(JE_NULL, JE_COUNT, JE_STRING, EMPTY_F, EMPTY_F);
   }
   appendDataString(b, JSON_OBJ_CLOSE);
 }
