@@ -55,5 +55,7 @@ dkms.conf
 y.output
 y.tab.c
 y.tab.h
-parser.c
-parser.h
+src/parser.?
+src/parser_element.bnf
+*.d
+parser_line_map.awk

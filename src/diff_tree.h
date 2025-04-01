@@ -14,10 +14,10 @@ typedef char Path;
 
 TO_JSON_FORWARD(Path);
 
-#define FILEDIFFHEADER_FIELDS(fieldType, field, fieldPtr, fieldList, fieldUnion, infix) \
+#define FILEDIFFHEADER_FIELDS(fieldType, field, fieldPtr, fieldList, fieldUnion, infix, end) \
   fieldType(PatchHeaderType, FileDiffHeaderT, infix) \
   fieldPtr(Path, pathA, infix) \
-  fieldPtr(Path, pathB, EMPTY_F)
+  fieldPtr(Path, pathB, end)
 
 TYPEDEF(FileDiffHeader, struct, FILEDIFFHEADER_FIELDS);
 
@@ -33,14 +33,14 @@ typedef uint16_t FileMode;
 
 TO_JSON_FORWARD(FileMode);
 
-#define GITHEADER_FIELDS(fieldType, field, fieldPtr, fieldList, fieldUnion, infix) \
+#define GITHEADER_FIELDS(fieldType, field, fieldPtr, fieldList, fieldUnion, infix, end) \
   fieldType(PatchHeaderType, GitHeaderT, infix) \
   fieldPtr(Path, pathA, infix) \
   fieldPtr(Path, pathB, infix) \
   fieldPtr(Hash, indexA, infix) \
   fieldPtr(Hash, indexB, infix) \
   field(FileMode, fileMode, , infix) \
-  fieldPtr(FileDiffHeader, fileDiff, EMPTY_F)
+  fieldPtr(FileDiffHeader, fileDiff, end)
 
 TYPEDEF(GitHeader, struct, GITHEADER_FIELDS);
 
@@ -48,10 +48,10 @@ NEW_FORWARD(GitHeader, GITHEADER_FIELDS);
 
 TO_JSON_FORWARD(GitHeader);
 
-#define PATCHHEADER_FIELDS(fieldType, field, fieldPtr, fieldList, fieldUnion, infix) \
+#define PATCHHEADER_FIELDS(fieldType, field, fieldPtr, fieldList, fieldUnion, infix, end) \
   fieldType(PatchHeaderType, infix) \
   fieldUnion(GitHeader, GitHeaderT, git, infix) \
-  fieldUnion(FileDiffHeader, FileDiffHeaderT, fileDiff, EMPTY_F)
+  fieldUnion(FileDiffHeader, FileDiffHeaderT, fileDiff, end)
 
 TYPEDEF(PatchHeader, union, PATCHHEADER_FIELDS);
 
@@ -65,11 +65,11 @@ typedef int Column;
 
 TO_JSON_FORWARD(Column);
 
-#define HUNKHEADER_FIELDS(fieldType, field, fieldPtr, fieldList, fieldUnion, infix) \
+#define HUNKHEADER_FIELDS(fieldType, field, fieldPtr, fieldList, fieldUnion, infix, end) \
   field(Line, lineA, , infix) \
   field(Line, lineB, , infix) \
   field(Column, columnA, , infix) \
-  field(Column, columnB, , EMPTY_F)
+  field(Column, columnB, , end)
 
 TYPEDEF(HunkHeader, struct, HUNKHEADER_FIELDS);
 
@@ -77,7 +77,8 @@ NEW_FORWARD(HunkHeader, HUNKHEADER_FIELDS);
 
 TO_JSON_FORWARD(HunkHeader);
 
-typedef enum { ELEMENT_ENUM } ElementType;
+#define ELEMENTTYPE_ENUM(enumerator, infix, end) ELEMENT_MAP(enumerator, enumerator, enumerator, infix, end)
+TYPEDEF_ENUM(ElementType, ELEMENTTYPE_ENUM);
 
 typedef union {
   String *string;
@@ -89,29 +90,29 @@ typedef struct {
   ElementValue value;
 } Element;
 
-//Element  *newElementString(ElementType, char *);
+Element *newElementString(ElementType, char *);
 
 Element *newElementCount(ElementType, int);
 
 Element *newElement(ElementType);
 
-SLL_NODE(Element);
+SLL_H(Element);
 
 SLL_FOLDL_FORWARD(Element, StringListBuilder);
 
 TO_JSON_FORWARD(Element);
 
-#define DIFFTYPE_ENUM(enumerator, infix) \
+#define DIFFTYPE_ENUM(enumerator, infix, end) \
   enumerator(Match, infix) \
   enumerator(Addition, infix) \
-  enumerator(Removal, EMPTY_F)
+  enumerator(Removal, end)
 TYPEDEF_ENUM(DiffType, DIFFTYPE_ENUM);
 
 TO_JSON_FORWARD(DiffType);
 
-#define DIFF_FIELDS(fieldType, field, fieldPtr, fieldList, fieldUnion, infix) \
+#define DIFF_FIELDS(fieldType, field, fieldPtr, fieldList, fieldUnion, infix, end) \
   field(DiffType, type, , infix) \
-  fieldList(Element, value, EMPTY_F)
+  fieldList(Element, value, end)
 
 TYPEDEF(Diff, struct, DIFF_FIELDS);
 
@@ -121,34 +122,34 @@ Diff *addition(SLLNode_Element *);
 
 Diff *removal(SLLNode_Element *);
 
-SLL_NODE(Diff);
+SLL_H(Diff);
 
 TO_JSON_LIST_FORWARD(Diff);
 TO_JSON_FORWARD(Diff);
 
-#define HUNK_FIELDS(fieldType, field, fieldPtr, fieldList, fieldUnion, infix) \
+#define HUNK_FIELDS(fieldType, field, fieldPtr, fieldList, fieldUnion, infix, end) \
   fieldPtr(HunkHeader, header, infix) \
-  fieldList(Diff, diffs, EMPTY_F)
+  fieldList(Diff, diffs, end)
 
 TYPEDEF(Hunk, struct, HUNK_FIELDS);
 
 NEW_FORWARD(Hunk, HUNK_FIELDS);
 
-SLL_NODE(Hunk);
+SLL_H(Hunk);
 SLL_FOLDL_FORWARD(Hunk, StringListBuilder);
 
 TO_JSON_LIST_FORWARD(Hunk);
 TO_JSON_FORWARD(Hunk);
 
-#define PATCH_FIELDS(fieldType, field, fieldPtr, fieldList, fieldUnion, infix) \
+#define PATCH_FIELDS(fieldType, field, fieldPtr, fieldList, fieldUnion, infix, end) \
   fieldPtr(PatchHeader, header, infix) \
-  fieldList(Hunk, hunks, EMPTY_F)
+  fieldList(Hunk, hunks, end)
 
 TYPEDEF(Patch, struct, PATCH_FIELDS);
 
 NEW_FORWARD(Patch, PATCH_FIELDS);
 
-SLL_NODE(Patch);
+SLL_H(Patch);
 
 TO_JSON_LIST_FORWARD(Patch);
 TO_JSON_FORWARD(Patch);

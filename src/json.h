@@ -60,18 +60,21 @@
   toJSONList_##type(b, x->name);
 #define JOF_UNION(type, enumerator, name, ...)
 
-#define TO_JSON_FORWARD(TYPE) \
-  void toJSON_##TYPE (StringBuilder *b, TYPE *x)
+#define TO_JSON_SPLIT_FORWARD(nameSuffix, type) \
+  void toJSON_##nameSuffix (StringBuilder *b, type *x)
 
-#define TO_JSON_OBJ(TYPE, fields) \
-  TO_JSON_FORWARD(TYPE) { \
+#define TO_JSON_FORWARD(type) \
+  TO_JSON_SPLIT_FORWARD(type, type)
+
+#define TO_JSON_OBJ(type, fields) \
+  TO_JSON_FORWARD(type) { \
     appendDataString(b, \
       JSON_OBJ_OPEN \
       "\"type\"" \
       JSON_OBJ_COLON \
-      STRINGIFY_VAR(TYPE) \
+      STRINGIFY_VAR(type) \
     ); \
-    fields(JOF_TYPE, JOF_FIELD, JOF_PTR, JOF_SLL, JOF_UNION, ) \
+    fields(JOF_TYPE, JOF_FIELD, JOF_PTR, JOF_SLL, JOF_UNION, , ) \
     appendDataString(b, JSON_OBJ_CLOSE); \
   }
 
@@ -81,8 +84,8 @@
 
 #define TO_JSON_UNION(type, fields) \
   TO_JSON_FORWARD(type) { \
-    switch (fields(JU_TYPE, EMPTY_F, EMPTY_F, EMPTY_F, EMPTY_F, )) { \
-      fields(EMPTY_F, EMPTY_F, EMPTY_F, EMPTY_F, JU_UNION, ) \
+    switch (fields(JU_TYPE, EMPTY_F, EMPTY_F, EMPTY_F, EMPTY_F, , )) { \
+      fields(EMPTY_F, EMPTY_F, EMPTY_F, EMPTY_F, JU_UNION, , ) \
     } \
   }
 
@@ -92,12 +95,18 @@
 #define TO_JSON_ENUM(type, enumerators) \
   TO_JSON_FORWARD(type) { \
     switch (*x) { \
-      enumerators(JE_ENUM, ) \
+      enumerators(JE_ENUM, , ) \
     } \
   }
 
-#define TO_JSON_HEAP_STRING(type) \
-  TO_JSON_FORWARD(type) { appendHeapString(b, strlen(x), x); }
+#define TO_JSON_SPLIT_HEAP_STRING(nameSuffix, type) \
+  TO_JSON_SPLIT_FORWARD(nameSuffix, type) { \
+    appendDataString(b, "\""); \
+    appendHeapString(b, strlen((char *)x), (char *)x); \
+    appendDataString(b, "\""); \
+  }
+
+#define TO_JSON_HEAP_STRING(type) TO_JSON_SPLIT_HEAP_STRING(type, type)
 
 #define TO_JSON_INT(type) \
   TO_JSON_FORWARD(type) { \

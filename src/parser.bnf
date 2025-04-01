@@ -1,0 +1,30 @@
+
+patches: patch         { $$ = sllBuilderNewOne_Patch($1); }
+       | patches patch { sllBuildAppend_Patch($$, $2); }
+       ;
+patch: patchHeader hunks { $$ = newPatch($1, sllMaterialize_Hunk($2)); };
+
+patchHeader: gitHeader fileDiffHeader { $$ = git2PatchHeader($1); $1->fileDiff = $2; }
+      | fileDiffHeader { $$ = fileDiff2PatchHeader($1); }
+      ;
+gitHeader: GIT_HEADER PATH PATH GIT_INDEX HASH HASH FILE_MODE
+         { $$ = newGitHeader($2, $3, $5, $6, $7, NULL); };
+fileDiffHeader: PATH PATH { $$ = newFileDiffHeader($1, $2); };
+
+hunks: hunk { $$ = sllBuilderNewOne_Hunk($1); }
+     | hunks hunk { sllBuildAppend_Hunk($$, $2); }
+     ;
+hunk: hunkHeader diffs { $$ = newHunk($1, sllMaterialize_Diff($2)); };
+hunkHeader: HUNK_HEADER POSITION POSITION POSITION POSITION
+          { $$ = newHunkHeader($2, $3, $4, $5); };
+diffs: diff { $$ = sllBuilderNewOne_Diff($1); }
+     | diffs diff { sllBuildAppend_Diff($$, $2); }
+     ;
+diff: element { $$ = match($1); }
+    | REMOVAL_OPEN  elements REMOVAL_CLOSE  { $$ = removal (sllMaterialize_Element($2)); }
+    | ADDITION_OPEN elements ADDITION_CLOSE { $$ = addition(sllMaterialize_Element($2)); }
+    ;
+elements: element { $$ = sllBuilderNewOne_Element($1); }
+        | elements element { sllBuildAppend_Element($$, $2); }
+        ;
+

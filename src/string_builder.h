@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "singly_linked_list.h"
+#include "json.h"
 
 typedef enum { StringT, StringBuilderT, InterspersedStringT, StringWriterT } StringType;
 
@@ -39,6 +40,8 @@ void appendHeapString(StringBuilder *b, size_t length, char *string);
 void appendDataString(StringBuilder *b, char *string);
 
 void appendString(StringBuilder *b, Strings *string);
+
+TO_JSON_FORWARD(String);
 
 /* writeIntersperse: if non-zero then write the toIntersperse string */
 typedef struct {

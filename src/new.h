@@ -4,7 +4,7 @@
 #include "pp_utils.h"
 
 /* When defining structs or unions define a <typeName>_FIELDS macro with the arguments:
- * (fieldType, field, fieldPtr, fieldList, fieldUnion, infix)
+ * (fieldType, field, fieldPtr, fieldList, fieldUnion, infix, end)
  *
  * fieldType(enumType, enumerator, infix)
  *   Defines the discriminator type for a union/struct
@@ -38,13 +38,16 @@
  *   - infix: optional separator for compound declarations
  * 
  * infix
- *   Optional argument passed to all field macros
+ *   Optional argument passed to all but the last field macros
  *   - Can be used for field separators, naming schemes, or to chain macro expansions
  *   - Often used to conditionally add commas or other syntax elements
+ *
+ * end
+ *   Optional argument similar to infux but only passed to the last field argument
  */
 
 /* When defining an enum define a <typeName>_ENUM macro with the arguments:
- * (enumerator, infix)
+ * (enumerator, infix, end)
  *
  * enumerator(name, infix)
  *   Defines the enumerator name
@@ -55,8 +58,13 @@
  *   Optional argument passed to all field macros
  *   - Can be used for field separators, naming schemes, or to chain macro expansions
  *   - Often used to conditionally add commas or other syntax elements
+ *
+ * end
+ *   Optional argument similar to infux but only passed to the last field argument
  */
 
+
+/* --- Define a Type --- */
 
 #define FIELD_TYPE(enumType, enumerator, ...) enumType type;
 #define FIELD_FIELD(type, name, ...) type name;
@@ -66,11 +74,13 @@
 
 #define TYPEDEF(name, specifier, fields) \
   typedef specifier { \
-    fields(FIELD_TYPE, FIELD_FIELD, FIELD_PTR, FIELD_SLL, FIELD_UNION, ) \
+    fields(FIELD_TYPE, FIELD_FIELD, FIELD_PTR, FIELD_SLL, FIELD_UNION, , ) \
   } name
 
 #define TYPEDEF_ENUM(name, enumerators) \
-  typedef enum { enumerators(CAT_APP, COMMA_F) } name
+  typedef enum { enumerators(CAT_APP, COMMA_F, EMPTY_F) } name
+
+/* --- Function to Dynamically Allocate and Initalize the Type --- */
 
 #define FWD_TYPE(...)
 #define FWD_FIELD(type, name, default, infix) type name infix()
@@ -79,7 +89,7 @@
 #define FWD_UNION(type, enumerator, name, infix) type name infix()
 
 #define NEW_FORWARD(type, fields) \
-  type *new##type(fields(FWD_TYPE, FWD_FIELD, FWD_PTR, FWD_SLL, FWD_UNION, COMMA_F))
+  type *new##type(fields(FWD_TYPE, FWD_FIELD, FWD_PTR, FWD_SLL, FWD_UNION, COMMA_F, EMPTY_F))
 
 #define INIT_TYPE(enumType, enumerator, ...) x->type = enumerator;
 #define INST_FIELD(type, name, ...) x->name = name;
@@ -90,9 +100,11 @@
 #define NEW_INSTANCE(type, fields) \
   NEW_FORWARD(type, fields) { \
     type *x = malloc(sizeof(type)); \
-    fields(INIT_TYPE, INST_FIELD, INST_PTR, INST_SLL, INST_UNION, ); \
+    fields(INIT_TYPE, INST_FIELD, INST_PTR, INST_SLL, INST_UNION, , ); \
     return x; \
   }
+
+/* --- Function to Initalize a Type with Default Values --- */
 
 #define INIT_FORWARD(type) \
   void init##type(type *x)
@@ -106,7 +118,15 @@
 
 #define INIT_INSTANCE(type, fields) \
   INIT_FORWARD(type) { \
-    fields(INIT_TYPE, INIT_FIELD, INIT_PTR, INIT_LIST, EMPTY_F, ) \
+    fields(INIT_TYPE, INIT_FIELD, INIT_PTR, INIT_LIST, EMPTY_F, , ) \
   }
+
+/* --- Functions to Safely Convert Type Pointers to a Union Pointer --- */
+
+#define TU_UNION(type, enumerator, ...) {
+
+
+#define TO_UNION_FORWARD(type, fields) \
+  type *fields(EMPTY_F, EMPTY_F, EMPTY_F, EMPTY_F, TU_UNION, CONST(type *))
 
 #endif
