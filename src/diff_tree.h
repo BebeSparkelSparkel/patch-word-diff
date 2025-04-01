@@ -55,6 +55,8 @@ TO_JSON_FORWARD(GitHeader);
 
 TYPEDEF(PatchHeader, union, PATCHHEADER_FIELDS);
 
+TO_UNION_FORWARD(PatchHeader, PATCHHEADER_FIELDS);
+
 TO_JSON_FORWARD(PatchHeader);
 
 typedef int Line;

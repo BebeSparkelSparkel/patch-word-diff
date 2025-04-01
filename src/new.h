@@ -32,7 +32,7 @@
  * 
  * fieldUnion(type, id, name, infix)
  *   Declares a union variant
- *   - type: variant's struct type
+ *   - type: variant's type
  *   - id: enum value that identifies this variant
  *   - name: field name for this variant
  *   - infix: optional separator for compound declarations
@@ -82,25 +82,23 @@
 
 /* --- Function to Dynamically Allocate and Initalize the Type --- */
 
-#define FWD_TYPE(...)
 #define FWD_FIELD(type, name, default, infix) type name infix()
 #define FWD_PTR(type, name, infix) type *name infix()
 #define FWD_SLL(type, name, infix) SLLNode_##type *name infix()
 #define FWD_UNION(type, enumerator, name, infix) type name infix()
 
 #define NEW_FORWARD(type, fields) \
-  type *new##type(fields(FWD_TYPE, FWD_FIELD, FWD_PTR, FWD_SLL, FWD_UNION, COMMA_F, EMPTY_F))
+  type *new##type(fields(EMPTY_F, FWD_FIELD, FWD_PTR, FWD_SLL, FWD_UNION, COMMA_F, EMPTY_F))
 
 #define INIT_TYPE(enumType, enumerator, ...) x->type = enumerator;
 #define INST_FIELD(type, name, ...) x->name = name;
 #define INST_PTR(type, name, ...) x->name = name;
 #define INST_SLL(type, name, ...) x->name = name;
-#define INST_UNION(...)
 
 #define NEW_INSTANCE(type, fields) \
   NEW_FORWARD(type, fields) { \
     type *x = malloc(sizeof(type)); \
-    fields(INIT_TYPE, INST_FIELD, INST_PTR, INST_SLL, INST_UNION, , ); \
+    fields(INIT_TYPE, INST_FIELD, INST_PTR, INST_SLL, EMPTY_F, , ); \
     return x; \
   }
 
@@ -109,12 +107,9 @@
 #define INIT_FORWARD(type) \
   void init##type(type *x)
 
-#define INIT_FIELD(type, name, default, ...) \
-  x->name = default;
-#define INIT_PTR(type, name, ...) \
-  x->name = NULL;
-#define INIT_LIST(type, name, ...) \
-  x->name = NULL;
+#define INIT_FIELD(type, name, default, ...) x->name = default;
+#define INIT_PTR(type, name, ...) x->name = NULL;
+#define INIT_LIST(type, name, ...) x->name = NULL;
 
 #define INIT_INSTANCE(type, fields) \
   INIT_FORWARD(type) { \
@@ -123,10 +118,11 @@
 
 /* --- Functions to Safely Convert Type Pointers to a Union Pointer --- */
 
-#define TU_UNION(type, enumerator, ...) {
-
+#define TU_UNION(type, enumerator, _, unionType) \
+  unionType *type##2##unionType(type *x);
 
 #define TO_UNION_FORWARD(type, fields) \
-  type *fields(EMPTY_F, EMPTY_F, EMPTY_F, EMPTY_F, TU_UNION, CONST(type *))
+  fields(EMPTY_F,   EMPTY_F, EMPTY_F,  EMPTY_F,   TU_UNION, type, type)
+//        (fieldType, field,   fieldPtr, fieldList, fieldUnion, infix, end)
 
 #endif

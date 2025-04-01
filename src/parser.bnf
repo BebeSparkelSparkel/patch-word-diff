@@ -4,8 +4,8 @@ patches: patch         { $$ = sllBuilderNewOne_Patch($1); }
        ;
 patch: patchHeader hunks { $$ = newPatch($1, sllMaterialize_Hunk($2)); };
 
-patchHeader: gitHeader fileDiffHeader { $$ = git2PatchHeader($1); $1->fileDiff = $2; }
-      | fileDiffHeader { $$ = fileDiff2PatchHeader($1); }
+patchHeader: gitHeader fileDiffHeader { $$ = GitHeader2PatchHeader($1); $1->fileDiff = $2; }
+      | fileDiffHeader { $$ = FileDiffHeader2PatchHeader($1); }
       ;
 gitHeader: GIT_HEADER PATH PATH GIT_INDEX HASH HASH FILE_MODE
          { $$ = newGitHeader($2, $3, $5, $6, $7, NULL); };

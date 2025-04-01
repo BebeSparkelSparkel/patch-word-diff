@@ -1,4 +1,8 @@
-CFLAGS = -Wall -Werror -MD -MP
+.SUFFIXES:
+
+.PRECIOUS: %.d
+
+CFLAGS = -Wall -Werror
 ifeq ($(CC),clang)
   CFLAGS += -fmacro-backtrace-limit=0 -fdiagnostics-show-category=name
 endif
@@ -29,9 +33,14 @@ parser.c parser.h: parser.y parser_line_map.awk
 	rm y.tab.c
 	mv y.tab.h parser.h
 
-%.o %d: %.c
+%.d: %.c
+	echo -n "$@ " > $@
+	$(CC) -MM $< -MT $*.o >> $@
 
--include *.d
+%.o: %.c %.d
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+-include $(wildcard *.d)
 
 clean:
 	rm -f $(TARGET) *.o *.d parser.?
