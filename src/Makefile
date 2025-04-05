@@ -1,11 +1,8 @@
-.SUFFIXES:
+# ./src/Makefile
 
 .PRECIOUS: %.d
 
 CFLAGS = -Wall -Werror
-ifeq ($(CC),clang)
-  CFLAGS += -fmacro-backtrace-limit=0 -fdiagnostics-show-category=name
-endif
 YFLAGS = -d
 
 TARGET = diff_parser
@@ -13,7 +10,7 @@ SOURCES := $(shell git ls-files)
 
 all: $(TARGET)
 
-$(TARGET): diff_tree.o parser.o lexer.o
+$(TARGET): main.o diff_tree.o parser.o lexer.o string_builder.o json_common.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 parser_element.bnf: parser_element_bnf.cpp element.h
@@ -29,21 +26,23 @@ parser.c parser.h: parser.y parser_line_map.awk
 	cat y.tab.c \
 		| sed 's/y\.tab\.\([ch]\)/parser.\1/g' \
 		| awk -f parser_line_map.awk   \
-		>> parser.c
+		> parser.c
 	rm y.tab.c
 	mv y.tab.h parser.h
 
 %.d: %.c
-	echo -n "$@ " > $@
-	$(CC) -MM $< -MT $*.o >> $@
+	$(CC) -MM $< -MT $*.o \
+		| sed '1s/:/ $@:/' \
+		> $@
 
+%.o: %.c
 %.o: %.c %.d
 	$(CC) $(CFLAGS) -c -o $@ $<
 
--include $(wildcard *.d)
-
 clean:
-	rm -f $(TARGET) *.o *.d parser.?
+	rm -f $(TARGET) *.o *.d parser.? parser_element.bnf parser_line_map.awk
+
+-include $(wildcard *.d)
 
 .PHONY: all clean
 

@@ -7,25 +7,30 @@
 
 TO_JSON_HEAP_STRING(Path);
 
+INITWITH(FileDiffHeader, FILEDIFFHEADER_FIELDS);
 NEW_INSTANCE(FileDiffHeader, FILEDIFFHEADER_FIELDS);
 
 TO_JSON_HEAP_STRING(Hash);
 
 TO_JSON_UNSIGNED(FileMode);
 
+INITWITH(GitHeader, GITHEADER_FIELDS);
 NEW_INSTANCE(GitHeader, GITHEADER_FIELDS);
+
+TO_UNION(PatchHeader, PATCHHEADER_FIELDS);
 
 TO_JSON_INT(Line);
 TO_JSON_INT(Column);
 
+INITWITH(HunkHeader, HUNKHEADER_FIELDS);
 NEW_INSTANCE(HunkHeader, HUNKHEADER_FIELDS);
 
-//Element  *newElementString(ElementType type, char *string) {
-//  Element *x = malloc(sizeof(Element));
-//  x->type = type;
-//  x->value.string = string;
-//  return x;
-//}
+Element  *newElementString(ElementType type, String *string) {
+  Element *x = malloc(sizeof(Element));
+  x->type = type;
+  x->value.string = string;
+  return x;
+}
 
 Element  *newElementCount(ElementType type, int count) {
   Element *x = malloc(sizeof(Element));
@@ -45,6 +50,10 @@ SLL_C(Element);
 SLL_FOLDL(Element, StringListBuilder);
 
 TO_JSON_ENUM(DiffType, DIFFTYPE_ENUM);
+SLL_C(Diff);
+SLL_FOLDL(Diff, StringListBuilder);
+TO_JSON_LIST(Diff);
+TO_JSON_OBJ(Diff, DIFF_FIELDS);
 
 Diff *match(Element *value) {
   assert(value != NULL);
@@ -70,11 +79,19 @@ Diff *removal(SLLNode_Element *value) {
   return x;
 }
 
+INITWITH(Hunk, HUNK_FIELDS);
 NEW_INSTANCE(Hunk, HUNK_FIELDS);
+SLL_C(Hunk);
 SLL_FOLDL(Hunk, StringListBuilder);
+TO_JSON_LIST(Hunk);
+TO_JSON_OBJ(Hunk, HUNK_FIELDS);
 
+INITWITH(Patch, PATCH_FIELDS);
 NEW_INSTANCE(Patch, PATCH_FIELDS);
+SLL_C(Patch);
 SLL_FOLDL(Patch, StringListBuilder);
+TO_JSON_LIST(Patch);
+TO_JSON_OBJ(Patch, PATCH_FIELDS);
 
 TO_JSON_OBJ(FileDiffHeader, FILEDIFFHEADER_FIELDS);
 
@@ -126,13 +143,3 @@ void toJSON_Element(StringBuilder *b, Element *e) {
   appendDataString(b, JSON_OBJ_CLOSE);
 }
 
-SLL_FOLDL(Diff, StringListBuilder);
-
-TO_JSON_LIST(Diff);
-TO_JSON_OBJ(Diff, DIFF_FIELDS);
-
-TO_JSON_LIST(Hunk);
-TO_JSON_OBJ(Hunk, HUNK_FIELDS);
-
-TO_JSON_LIST(Patch);
-TO_JSON_OBJ(Patch, PATCH_FIELDS);

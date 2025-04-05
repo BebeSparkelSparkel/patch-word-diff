@@ -49,7 +49,6 @@
     appendDataString(b, JSON_LIST_CLOSE); \
   }
 
-#define JOF_TYPE(enumType, enumerator, ...)
 #define JOF_FIELD(type, name, ...) \
   appendDataString(b, JSON_OBJ_COMMA #name JSON_OBJ_COLON); \
   toJSON_##type(b, &x->name);
@@ -74,18 +73,19 @@
       JSON_OBJ_COLON \
       STRINGIFY_VAR(type) \
     ); \
-    fields(JOF_TYPE, JOF_FIELD, JOF_PTR, JOF_SLL, JOF_UNION, , ) \
+    fields(EMPTY_F, EMPTY_F, JOF_FIELD, JOF_PTR, JOF_SLL, JOF_UNION, , ) \
     appendDataString(b, JSON_OBJ_CLOSE); \
   }
 
 #define JU_TYPE(...) x->type
+#define JU_HEADER_TYPE(...) x->header.type
 #define JU_UNION(type, enumerator, name, ...) \
   case enumerator: return toJSON_##type(b, (type *)x);
 
 #define TO_JSON_UNION(type, fields) \
   TO_JSON_FORWARD(type) { \
-    switch (fields(JU_TYPE, EMPTY_F, EMPTY_F, EMPTY_F, EMPTY_F, , )) { \
-      fields(EMPTY_F, EMPTY_F, EMPTY_F, EMPTY_F, JU_UNION, , ) \
+    switch (fields(JU_TYPE, JU_HEADER_TYPE, EMPTY_F, EMPTY_F, EMPTY_F, EMPTY_F, , )) { \
+      fields(EMPTY_F, EMPTY_F, EMPTY_F, EMPTY_F, EMPTY_F, JU_UNION, , ) \
     } \
   }
 

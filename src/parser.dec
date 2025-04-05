@@ -9,7 +9,7 @@ extern int yylex(void);
 
 
 %union {
-  char *string;
+  String *string;
   int integer;
 
   SLLBuilder_Patch    *patches;

@@ -6,8 +6,7 @@
 #define COMMA ,
 #define COMMA_F(...) COMMA
 
-#define PIPE |
-#define PIPE_F() PIPE
+//#define APPLY(x, y) x(y)
 
 #define CAT_APP(x, y, ...) x y()
 

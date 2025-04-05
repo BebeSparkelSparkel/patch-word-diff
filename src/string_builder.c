@@ -3,6 +3,16 @@
 #include <string.h>
 #include <assert.h>
 
+INITWITH(StringHeader, STRINGHEADER_FIELDS);
+
+String *newStringCopy(size_t length, char *string) {
+  assert(length > 0);
+  assert(string != NULL);
+  assert(length == strlen(string));
+  string = strndup(string, length);
+  return newHeapString(length, string);
+}
+
 String *newHeapString(size_t length, char *string) {
   assert(length > 0);
   assert(string != NULL);
@@ -33,26 +43,21 @@ TO_JSON_FORWARD(String) {
 
 SLL_C(Strings);
 
-void initStringBuilder(StringBuilder *b) {
-  b->header.type = StringBuilderT;
-  b->header.length = 0;
-  b->count = 0;
-  sllInitBuilder_Strings(&b->strings);
-}
+INIT_INSTANCE(StringBuilder, STRINGBUILDER_FIELDS);
 
 void appendHeapString(StringBuilder *b, size_t length, char *string) {
   assert(b != NULL);
   assert(length > 0);
   assert(string != NULL);
   String *s = newHeapString(length, string);
-  appendString(b, asStrings_String(s));
+  appendString(b, String2Strings(s));
 }
 
 void appendDataString(StringBuilder *b, char *string) {
   assert(b != NULL);
   assert(string != NULL);
   String *s = newDataString(strlen(string), string);
-  appendString(b, asStrings_String(s));
+  appendString(b, String2Strings(s));
 }
 
 void appendString(StringBuilder *b, Strings *s) {
@@ -63,19 +68,14 @@ void appendString(StringBuilder *b, Strings *s) {
   ++b->count;
 }
 
-void initStringListBuilder(StringListBuilder *l) {
-  assert(l != NULL);
-  l->length = 0;
-  l->count = 0;
-  sllInitBuilder_Strings(&l->strings);
-}
+INIT_INSTANCE(StringListBuilder, STRINGLISTBUILDER_FIELDS);
 
 void appendStringListBuilder(StringListBuilder *l, StringWriter *w) {
   assert(l != NULL);
   assert(w != NULL);
   l->length += w->header.length;
   ++l->count;
-  sllBuildAppend_Strings(&l->strings, asStrings_StringWriter(w));
+  sllBuildAppend_Strings(&l->strings, StringWriter2Strings(w));
 }
 
 StringWriter *finalizeBuilder(StringBuilder *b) {
@@ -91,13 +91,14 @@ StringWriter *finalizeBuilder(StringBuilder *b) {
 void appendStringWriter(StringBuilder *b, StringWriter *w) {
     assert(b != NULL);
     assert(w != NULL);
-    appendString(b, asStrings_StringWriter(w));
+    assert(w->header.type == StringWriterT);
+    appendString(b, StringWriter2Strings(w));
 }
 
 StringWriter *intersperseDataString(StringListBuilder *l, char *s) {
   assert(l != NULL);
   assert(s != NULL);
-  return intersperseString(l, asStrings_String(newDataString(strlen(s), s)));
+  return intersperseString(l, String2Strings(newDataString(strlen(s), s)));
 }
 
 StringWriter *intersperseString(StringListBuilder *l, Strings *s) {
@@ -116,32 +117,17 @@ StringWriter *intersperseString(StringListBuilder *l, Strings *s) {
   w->header.length = i->header.length;
   w->offset = 0;
   
-  // Create a new node for the interspersed string
-  SLLNode_Strings *n = sslNewNode_Strings(asStrings_InterspersedString(i));
+  SLLNode_Strings *n = sslNewNode_Strings(InterspersedString2Strings(i));
   w->strings = n;
   
   return w;
 }
 
-Strings *asStrings_String(String *s) {
-  assert(s != NULL);
-  assert(s->header.type == StringT);
-  return (Strings *)s;
-}
-
-Strings *asStrings_InterspersedString(InterspersedString *i) {
-  assert(i != NULL);
-  assert(i->header.type == InterspersedStringT);
-  return (Strings *)i;
-}
-
-Strings *asStrings_StringWriter(StringWriter *w) {
-  assert(w != NULL);
-  assert(w->header.type == StringWriterT);
-  return (Strings *)w;
-}
+TO_UNION(Strings, STRINGS_FIELDS);
+FROM_UNION(Strings, STRINGS_FIELDS);
 
 Strings *popFromInterspersedString(InterspersedString *i) {
+  assert(!i->writeIntersperse || i->toIntersperse != NULL);
   Strings *s = i->writeIntersperse ? i->toIntersperse : sllPop_Strings(&i->strings);
   if (s != NULL) {
     i->header.length -= ((StringHeader *)s)->length;
@@ -154,20 +140,21 @@ void moveNextInterspersedStringToWriterHead(StringWriter *w) {
   InterspersedString *i = (InterspersedString *)w->strings->x;
   assert(i->header.type == InterspersedStringT);
   Strings *s = popFromInterspersedString(i);
+  assert(s != NULL);
   sllPush_Strings(&w->strings, s);
 }
 
-void freeStrings(Strings *s);
-
 void freeString(String *s) {
   assert(s != NULL);
-  assert(s->header.type = StringT);
+  assert(s->header.type == StringT);
   if (s->shouldFree == true) {
     assert(s->string != NULL);
     free(s->string);
   }
   free(s);
 }
+
+void freeStrings(Strings *s);
 
 void freeNodeStrings(SLLNode_Strings *n) {
   Strings *s;
@@ -179,7 +166,7 @@ void freeNodeStrings(SLLNode_Strings *n) {
 
 void freeInterspersedString(InterspersedString *s) {
   assert(s != NULL);
-  assert(s->header.type = InterspersedStringT);
+  assert(s->header.type == InterspersedStringT);
   freeStrings(s->toIntersperse);
   freeNodeStrings(s->strings);
   free(s);
@@ -202,7 +189,7 @@ void freeStrings(Strings *s) {
 
 void freeStringWriter(StringWriter *w) {
   assert(w != NULL);
-  assert(w->header.type = StringWriterT);
+  assert(w->header.type == StringWriterT);
   freeNodeStrings(w->strings);
   free(w);
 }
@@ -211,17 +198,21 @@ size_t materializeString(char *buffer, size_t bufRemaining, StringWriter *w) {
   assert(buffer != NULL);
   assert(bufRemaining > 1);
   assert(w != NULL);
-  while(bufRemaining > 1 && w->header.length > 0) {
+  while (bufRemaining > 1 && w->header.length > 0) {
     Strings *h = w->strings->x;
-    StringHeader *header = (StringHeader *)h;
+    StringHeader *header = Strings2StringHeader(h);
     assert(header->length > w->offset);
+    assert(w->offset >= 0);
     switch (header->type) {
       case StringT: {
-        String *s = (String *)h;
+        String *s = Strings2String(h);
+        assert(s != NULL);
+        assert(s->string != NULL);
         int l = header->length - w->offset;
         char *src = s->string + w->offset;
         if (l < bufRemaining) {
           w->offset = 0;
+          sllPop_Strings(&w->strings);
         } else {
           l = bufRemaining - 1;
           w->offset += l;
@@ -239,9 +230,14 @@ size_t materializeString(char *buffer, size_t bufRemaining, StringWriter *w) {
         exit(1);
         break; }
       case StringWriterT: {
-        fprintf(stderr, "Unimplemented sub StringWriterT materialization\n");
-        assert(0);
+        StringWriter *w2 = Strings2StringWriter(h);
+        size_t l = materializeString(buffer, bufRemaining, w2);
+        if (l == 0)
+          sllPop_Strings(&w->strings);
         break; }
+      default:
+        assert(0);
+        break;
     }
   }
   *buffer = '\0';
@@ -249,5 +245,21 @@ size_t materializeString(char *buffer, size_t bufRemaining, StringWriter *w) {
     freeStringWriter(w);
     return 0;
   } else return w->header.length;
+}
+
+int fprintStringWriter(FILE *stream, StringWriter *w) {
+  assert(stream != NULL);
+  assert(w != NULL);
+  assert(w->header.type == StringWriterT);
+  assert(w->header.length > 0);
+  int length = w->header.length;
+  int l;
+  char buf[BUFSIZ];
+  while (materializeString(buf, sizeof(buf), w)) {
+    if ((l = fprintf(stream, "%s", buf)) < 0)
+      return l;
+    assert(l >= 0 && l < BUFSIZ);
+  }
+  return length;
 }
 

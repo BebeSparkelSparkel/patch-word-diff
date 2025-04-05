@@ -1,6 +1,9 @@
 # Prerequisites
 *.d
 
+# Preprocessor
+*.i
+
 # Object files
 *.o
 *.ko
@@ -57,5 +60,6 @@ y.tab.c
 y.tab.h
 src/parser.?
 src/parser_element.bnf
-*.d
+src/diff_parser
+src/lexer.c
 parser_line_map.awk

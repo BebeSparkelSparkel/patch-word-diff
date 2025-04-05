@@ -5,27 +5,23 @@
 #include "parser.h"
 
 extern void yyerror(const char*s);
+
+void yylex_src_only();
 %}
+
+%option nounput
+%option noinput
+%option noyywrap
 
 %x S_GIT_HEADER S_GIT_INDEX S_FILE_DIFF_HEADER S_HUNK_HEADER S_HUNK S_HUNK_ONLY
 
-  #ifdef DIFF
-  #define START INITIAL
-  #else
-  #define YY_DECL int yylex_src(void)
-  #define START S_HUNK_ONLY
-  #endif
-
 %%
-
-  BEGIN(START);
 
 <INITIAL,S_HUNK>^"diff --git" BEGIN(S_GIT_HEADER); return S_GIT_HEADER;
 <S_GIT_HEADER>{
   "a/"[^ \n]+  |
   "b/".*       {
-    if ((yylval.string = strdup(yytext + 2)) == NULL)
-      yyerror("Could not duplicate path string.");
+    yylval.string = newStringCopy(yyleng - 2, yytext + 2);
     BEGIN(S_GIT_INDEX);
     return PATH;
   }
@@ -38,8 +34,7 @@ extern void yyerror(const char*s);
     return FILE_MODE;
   }
   [0-9a-f]+ {
-    if ((yylval.string = strdup(yytext)) == NULL)
-      yyerror("Could not duplicate hash string.");
+    yylval.string = newStringCopy(yyleng, yytext);
     return HASH;
   }
   ".."
@@ -47,14 +42,12 @@ extern void yyerror(const char*s);
 
 <INITIAL,S_FILE_DIFF_HEADER,S_HUNK>^"--- a/".* {
   int pl = strlen("--- a/");
-  if ((yylval.string = strndup(yytext + pl, yyleng - pl)) == NULL)
-    yyerror("Could not duplicate path string.");
+  yylval.string = newStringCopy(yyleng - pl, yytext + pl);
   return PATH;
 }
 <S_FILE_DIFF_HEADER>^"+++ b/".* {
   int pl = strlen("+++ b/");
-  if ((yylval.string = strndup(yytext + pl, yyleng - pl)) == NULL)
-    yyerror("Could not duplicate path string.");
+  yylval.string = newStringCopy(yyleng - pl, yytext + pl);
   BEGIN(S_HUNK_HEADER);
   return PATH;
 }
@@ -86,10 +79,12 @@ extern void yyerror(const char*s);
   \\  return '\\';
   \"  return '"';
   [^[\]{}\n \\\"\b\f\t]+  {
-    if ((yylval.string = strdup(yytext)) == NULL)
-      yyerror("Could not duplicate hunk string.");
+    yylval.string = newStringCopy(yyleng, yytext);
     return WORD;
   }
 }
 
 %%
+
+void yylex_src_only() { BEGIN(S_HUNK_ONLY); }
+
