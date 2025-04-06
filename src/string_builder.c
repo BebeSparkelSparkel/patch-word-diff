@@ -5,80 +5,86 @@
 
 INITWITH(StringHeader, STRINGHEADER_FIELDS);
 
-String *newStringCopy(size_t length, char *string) {
-  assert(length > 0);
-  assert(string != NULL);
-  assert(length == strlen(string));
-  string = strndup(string, length);
-  return newHeapString(length, string);
-}
 
-String *newHeapString(size_t length, char *string) {
-  assert(length > 0);
-  assert(string != NULL);
-  assert(length == strlen(string));
-  String *s = malloc(sizeof(String));
-  s->header.type = StringT;
-  s->header.length = length;
-  s->shouldFree = true;
-  s->string = string;
-  return s;
-}
+//String *newCopyString(size_t length, char *string);
+//String *newPossessedString(size_t length, char *string);
+//String *newWildString(size_t length, char *string);
 
-String *newDataString(size_t length, char *string) {
-  assert(length > 0);
-  assert(string != NULL);
-  assert(length == strlen(string));
-  String *s = newHeapString(length, string);
-  s->shouldFree = false;
-  return s;
-}
+//String *newStringCopy(size_t length, char *string) {
+//  assert(length > 0);
+//  assert(string != NULL);
+//  assert(length == strlen(string));
+//  string = strndup(string, length);
+//  return newPossessedString(length, string);
+//}
+//
+//String *newPossessedString(size_t length, char *string) {
+//  assert(length > 0);
+//  assert(string != NULL);
+//  assert(length == strlen(string));
+//  String *s = malloc(sizeof(String));
+//  s->header.type = StringT;
+//  s->header.length = length;
+//  s->shouldFree = true;
+//  s->string = string;
+//  return s;
+//}
+//
+//String *newWildString(size_t length, char *string) {
+//  assert(length > 0);
+//  assert(string != NULL);
+//  assert(length == strlen(string));
+//  String *s = newPossessedString(length, string);
+//  s->shouldFree = false;
+//  return s;
+//}
 
 TO_JSON_FORWARD(String) {
-  appendDataString(b, "\"");
-  appendHeapString(b, x->header.length, x->string);
+  appendWildString(b, "\"");
+  appendPossessedString(b, x->header.length, x->string);
   free(x);
-  appendDataString(b, "\"");
+  appendWildString(b, "\"");
 }
 
 SLL_C(Strings);
 
 INIT_INSTANCE(StringBuilder, STRINGBUILDER_FIELDS);
 
-void appendHeapString(StringBuilder *b, size_t length, char *string) {
+void appendPossessedString(StringBuilder *b, size_t length, char *string) {
   assert(b != NULL);
   assert(length > 0);
   assert(string != NULL);
-  String *s = newHeapString(length, string);
-  appendString(b, String2Strings(s));
+  String *s = newPossessedString(length, string);
+  appendPossessedStrings(b, String2Strings(s));
 }
 
-void appendDataString(StringBuilder *b, char *string) {
+void appendWildString(StringBuilder *b, char *string) {
   assert(b != NULL);
   assert(string != NULL);
-  String *s = newDataString(strlen(string), string);
-  appendString(b, String2Strings(s));
+  String *s = newWildString(strlen(string), string);
+  appendPossessedStrings(b, String2Strings(s));
 }
 
-void appendString(StringBuilder *b, Strings *s) {
+void appendPossessedString(StringBuilder *b, Strings *s) {
   assert(b != NULL);
   assert(s != NULL);
   sllBuildAppend_Strings(&b->strings, s);
-  b->header.length += ((StringHeader *)s)->length;
+  b->header.length += Strings2StringHeader(s)->length;
   ++b->count;
 }
 
 INIT_INSTANCE(StringListBuilder, STRINGLISTBUILDER_FIELDS);
 
-void appendStringListBuilder(StringListBuilder *l, StringWriter *w) {
-  assert(l != NULL);
-  assert(w != NULL);
-  l->length += w->header.length;
-  ++l->count;
-  sllBuildAppend_Strings(&l->strings, StringWriter2Strings(w));
-}
+//void appendStringListBuilder(StringListBuilder *l, StringWriter *w) {
+//  assert(l != NULL);
+//  assert(w != NULL);
+//  l->length += w->header.length;
+//  ++l->count;
+//  sllBuildAppend_Strings(&l->strings, StringWriter2Strings(w));
+//}
 
 StringWriter *finalizeBuilder(StringBuilder *b) {
+void finalizeBuilder(StringBuilder *b, StringWriter *w);
   assert(b != NULL);
   StringWriter *w = malloc(sizeof(StringWriter));
   w->header.type = StringWriterT;
@@ -88,39 +94,38 @@ StringWriter *finalizeBuilder(StringBuilder *b) {
   return w;
 }
 
-void appendStringWriter(StringBuilder *b, StringWriter *w) {
+void appendPossessedStringWriter(StringBuilder *b, StringWriter *w) {
     assert(b != NULL);
     assert(w != NULL);
     assert(w->header.type == StringWriterT);
-    appendString(b, StringWriter2Strings(w));
+    appendPossessedStrings(b, StringWriter2Strings(w));
 }
 
-StringWriter *intersperseDataString(StringListBuilder *l, char *s) {
+StringWriter *intersperseWildString(StringListBuilder *l, char *s) {
   assert(l != NULL);
   assert(s != NULL);
-  return intersperseString(l, String2Strings(newDataString(strlen(s), s)));
+  return intersperseString(l, String2Strings(newWildString(strlen(s), s)));
 }
+
+//StringWriter *newStringWriter(size_t length, SLLNode_Strings *strings) {
+//  StringWriter *w = malloc(sizeof(StringWriter));
+//  w->header.type = StringWriterT;
+//  w->header.length = length;
+//  w->offset = 0;
+//  w->strings = strings;
+//  return w;
+//}
 
 StringWriter *intersperseString(StringListBuilder *l, Strings *s) {
   assert(l != NULL);
   assert(s != NULL);
-  
   InterspersedString *i = malloc(sizeof(InterspersedString));
   i->header.type = InterspersedStringT;
-  i->header.length = l->length + (l->count > 0 ? (l->count - 1) * ((StringHeader *)s)->length : 0);
+  i->header.length = l->length + (l->count > 1 ? (l->count - 1) * Strings2StringHeader(s)->length : 0);
   i->writeIntersperse = false; // Start with a string, not the interspersed one
   i->toIntersperse = s;
   i->strings = sllMaterialize_Strings(&l->strings);
-  
-  StringWriter *w = malloc(sizeof(StringWriter));
-  w->header.type = StringWriterT;
-  w->header.length = i->header.length;
-  w->offset = 0;
-  
-  SLLNode_Strings *n = sslNewNode_Strings(InterspersedString2Strings(i));
-  w->strings = n;
-  
-  return w;
+  return newStringWriter(i->header.length, sslNewNode_Strings(InterspersedString2Strings(i)));
 }
 
 TO_UNION(Strings, STRINGS_FIELDS);
@@ -130,18 +135,10 @@ Strings *popFromInterspersedString(InterspersedString *i) {
   assert(!i->writeIntersperse || i->toIntersperse != NULL);
   Strings *s = i->writeIntersperse ? i->toIntersperse : sllPop_Strings(&i->strings);
   if (s != NULL) {
-    i->header.length -= ((StringHeader *)s)->length;
+    i->header.length -= Strings2StringHeader(s)->length;
     i->writeIntersperse = !i->writeIntersperse;
   }
   return s;
-}
-
-void moveNextInterspersedStringToWriterHead(StringWriter *w) {
-  InterspersedString *i = (InterspersedString *)w->strings->x;
-  assert(i->header.type == InterspersedStringT);
-  Strings *s = popFromInterspersedString(i);
-  assert(s != NULL);
-  sllPush_Strings(&w->strings, s);
 }
 
 void freeString(String *s) {
@@ -154,31 +151,29 @@ void freeString(String *s) {
   free(s);
 }
 
-void freeStrings(Strings *s);
-
 void freeNodeStrings(SLLNode_Strings *n) {
   Strings *s;
   while (n != NULL) {
     s = sllPop_Strings(&n);
-    freeStrings(s);
+    free_Strings(s);
   }
 }
 
 void freeInterspersedString(InterspersedString *s) {
   assert(s != NULL);
   assert(s->header.type == InterspersedStringT);
-  freeStrings(s->toIntersperse);
+  free_Strings(s->toIntersperse);
   freeNodeStrings(s->strings);
   free(s);
 }
 
-void freeStrings(Strings *s) {
-  switch (((StringHeader *)s)->type) {
+void free_Strings(Strings *s) {
+  switch (Strings2StringHeader(s)->type) {
     case StringT:
-      freeString((String *)s);
+      freeString(Strings2String(s));
       break;
     case InterspersedStringT:
-      freeInterspersedString((InterspersedString *)s);
+      freeInterspersedString(Strings2InterspersedString(s));
       break;
     default:
       assert(0);
@@ -222,9 +217,12 @@ size_t materializeString(char *buffer, size_t bufRemaining, StringWriter *w) {
         buffer += l;
         w->header.length -= l;
         break; }
-      case InterspersedStringT:
-        moveNextInterspersedStringToWriterHead(w);
-        break;
+      case InterspersedStringT: {
+        InterspersedString *i = Strings2InterspersedString(h);
+        Strings *s = popFromInterspersedString(i);
+        assert(s != NULL);
+        sllPush_Strings(&w->strings, s);
+        break; }
       case StringBuilderT: {
         fprintf(stderr, "Unimplemented sub StringBuilderT materialization\n");
         exit(1);

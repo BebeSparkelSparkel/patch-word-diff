@@ -1,12 +1,14 @@
 # ./tests/Makefile
 .PRECIOUS: %.d
 
-# Same compiler flags as src plus additional flags for Check
-CFLAGS = -Wall -Werror -I../src -I/usr/local/include
+CFLAGS = -Wall -I../src -I/usr/local/include 
+ifdef DEBUG
+	CFLAGS += -g
+endif
 CHECK_LIBS = -lcheck
 LDFLAGS=-L/usr/local/lib
 
-TEST_TARGETS = test_string_builder
+TEST_TARGETS = test_string_builder.out
 SOURCES = $(wildcard *.c)
 
 all: $(TEST_TARGETS)

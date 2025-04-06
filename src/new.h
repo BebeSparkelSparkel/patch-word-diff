@@ -4,7 +4,7 @@
 #include "pp_utils.h"
 
 /* When defining structs or unions define a <typeName>_FIELDS macro with the arguments:
- * (fieldType, fieldHeader, field, fieldPtr, fieldList, fieldUnion, infix, end)
+ * (fieldType, fieldHeader, field, fieldPtr, fieldCustom, fieldUnion, infix, end)
  *
  * fieldType(type, enumerator, infix)
  *   Defines the discriminator type for a union/struct
@@ -30,11 +30,15 @@
  *   - name: field name
  *   - infix: optional separator for compound declarations
  * 
- * fieldList(type, name, infix)
- *   Declares a linked list field
- *   - type: element type of the list
- *   - name: field name
- *   - infix: optional separator for compound declarations
+ * fieldCustom(type, name, infix)
+ *   Declares a custom field.
+ *   If utilized in type definitions, define the macros
+ *    - `FIELD_CUSTOM(type, name, ...)` for the struct or union type member defintion
+ *    - `INIT_CUSTOM(type, name, ...)` optional, for the default value initialization of the field
+ *   Args:
+ *    - type: abstract type
+ *    - name: field name
+ *    - infix: optional separator for compound declarations
  * 
  * fieldUnion(type, enumerator, name, infix)
  *   Declares a union variant
@@ -76,12 +80,14 @@
 #define FIELD_HEADER(type, ...) type header;
 #define FIELD_FIELD(type, name, ...) type name;
 #define FIELD_PTR(type, name, ...) type *name;
-#define FIELD_LIST(type, name, ...) SLLNode_##type *name;
+#ifndef FIELD_CUSTOM
+#define FIELD_CUSTOM "ERROR: The macro `#define FIELD_CUSTOM(type, name, ...)` needes to be defined for the struct or union type member defintion. See new.h for details."
+#endif
 #define FIELD_UNION(type, enumerator, name, ...) type name;
 
 #define TYPEDEF(name, specifier, fields) \
   typedef specifier { \
-    fields(FIELD_TYPE, FIELD_HEADER, FIELD_FIELD, FIELD_PTR, FIELD_LIST, FIELD_UNION, , ) \
+    fields(FIELD_TYPE, FIELD_HEADER, FIELD_FIELD, FIELD_PTR, FIELD_CUSTOM, FIELD_UNION, , ) \
   } name
 
 #define TYPEDEF_ENUM(type, enumerators) \
@@ -134,11 +140,13 @@
 
 #define INIT_FIELD(__, name, type) DEFAULT_##type##_##name(x->name);
 #define INIT_PTR(type, name, ...) x->name = NULL;
-#define INIT_LIST(type, name, ...) x->name = NULL;
+#ifndef INIT_CUSTOM
+#define INIT_CUSTOM "ERROR: The macro `#define INIT_CUSTOM(type, name, ...)` needs to be defined for the default value initialization of the field. See new.h for details."
+#endif
 
 #define INIT_INSTANCE(type, fields) \
   INIT_FORWARD(type) { \
-    fields(INIT_TYPE, INIT_HEADER, INIT_FIELD, INIT_PTR, INIT_LIST, EMPTY_F, type, type) \
+    fields(INIT_TYPE, INIT_HEADER, INIT_FIELD, INIT_PTR, INIT_CUSTOM, EMPTY_F, type, type) \
   }
 
 /* --- Functions to Safely Convert Type Pointers to a Union Pointer --- */

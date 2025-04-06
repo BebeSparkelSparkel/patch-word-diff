@@ -1,64 +1,88 @@
 #ifndef SINGLY_LINKED_LIST_H
 #define SINGLY_LINKED_LIST_H
 
-#define SLL_NODE(type) \
-  typedef struct SLLNode_##type { \
-    struct SLLNode_##type *next; \
-    type *x; \
-  } SLLNode_##type
+#define FIELD_CUSTOM(type, name, ...) SLL_##type *name;
+#define INIT_CUSTOM(...) INIT_PTR(__VA_ARGS__)
 
-#define SLL_NEW_NODE_FORWARD(type) \
-  SLLNode_##type *sslNewNode_##type (type *x)
+#define SLL_BOX_FIELDS(type) \
+  type *x; \
+  bool possessed;
 
-#define SLL_NEW_NODE(type) \
-  SLL_NEW_NODE_FORWARD(type) { \
-    SLLNode_##type *n = malloc(sizeof(SLLNode_##type)); \
-    n->next = NULL; \
-    n->x = x; \
-    return n; \
-  }
-
-#define SLL_BUILDER(type) \
+#define SLL_BOX_TYPEDEF(type) \
   typedef struct { \
-    SLLNode_##type *head; \
-    SLLNode_##type *tail; \
-  } SLLBuilder_##type
+    SLL_BOX_FIELDS(type) \
+  } SLLBox_##type
 
-#define SLL_INIT_BUILDER_FORWARD(type) \
-  void sllInitBuilder_##type (SLLBuilder_##type *b)
+#define SLL_TYPEDEF(type) \
+  typedef struct SLL_##type { \
+    SLL_BOX_FIELDS(type) \
+    struct SLL_##type *next; \
+  } SLL_##type
 
-#define SLL_INIT_BUILDER(type) \
-  SLL_INIT_BUILDER_FORWARD(type) { \
+// #define SLL_NEW_NODE_FORWARD(type) \
+//   SLL_##type *sslNewNode_##type (type *x)
+// 
+// #define SLL_NEW_NODE(type) \
+//   SLL_NEW_NODE_FORWARD(type) { \
+//     SLL_##type *n = malloc(sizeof(SLL_##type)); \
+//     n->next = NULL; \
+//     n->x = x; \
+//     return n; \
+//   }
+
+#define SLLB_TYPEDEF(type) \
+  typedef struct { \
+    SLL_##type *head; \
+    SLL_##type *tail; \
+  } SLLB_##type
+
+#define SLLB_INIT_FORWARD(type) \
+  void sllInitBuilder_##type (SLLB_##type *b)
+
+#define SLLB_INIT(type) \
+  SLLB_INIT_FORWARD(type) { \
     b->head = NULL; \
     b->tail = NULL; \
   }
 
-#define SLL_INIT_ONE_BUILDER_FORWARD(type) \
-  void sllBuilderInitOne_##type (SLLBuilder_##type *b, type *x)
+//#define SLL_INIT_ONE_BUILDER_FORWARD(type) \
+//  void sllBuilderInitOne_##type (SLLB_##type *b, type *x)
+//
+//#define SLL_INIT_ONE_BUILDER(type) \
+//  SLL_INIT_ONE_BUILDER_FORWARD(type) { \
+//    SLL_##type *n = sslNewNode_##type(x); \
+//    b->head = n; \
+//    b->tail = n; \
+//  }
+//
+//#define SLL_NEW_ONE_BUILDER_FORWARD(type) \
+//  SLLB_##type *sllBuilderNewOne_##type (type *x)
+//
+//#define SLL_NEW_ONE_BUILDER(type) \
+//  SLL_NEW_ONE_BUILDER_FORWARD(type) { \
+//    SLLB_##type *b = malloc(sizeof(SLLB_##type)); \
+//    sllBuilderInitOne_##type (b, x); \
+//    return b; \
+//  }
 
-#define SLL_INIT_ONE_BUILDER(type) \
-  SLL_INIT_ONE_BUILDER_FORWARD(type) { \
-    SLLNode_##type *n = sslNewNode_##type(x); \
-    b->head = n; \
-    b->tail = n; \
-  }
+#define SLLB_APPEND_POSSESSED_FORWARD(type) \
+  void sllbAppendPossessed_##type(SLLB_##type *b, type *x)
 
-#define SLL_NEW_ONE_BUILDER_FORWARD(type) \
-  SLLBuilder_##type *sllBuilderNewOne_##type (type *x)
+#define SLLB_APPEND_POSSESSED(type) \
+  SLLB_APPEND_POSSESSED_FORWARD(type) { sllbAppend_##type(b, x, true); }
 
-#define SLL_NEW_ONE_BUILDER(type) \
-  SLL_NEW_ONE_BUILDER_FORWARD(type) { \
-    SLLBuilder_##type *b = malloc(sizeof(SLLBuilder_##type)); \
-    sllBuilderInitOne_##type (b, x); \
-    return b; \
-  }
+#define SLLB_APPEND_WILD_FORWARD(type) \
+  void sllbAppendWild_##type(SLLB_##type *b, type *x)
 
-#define SLL_APPEND_FORWARD(type) \
-  void sllBuildAppend_##type (SLLBuilder_##type *b, type *x)
+#define SLLB_APPEND_WILD(type) \
+  SLLB_APPEND_WILD_FORWARD(type) { sllbAppend_##type(b, x, false); }
 
-#define SLL_APPEND(type) \
-  SLL_APPEND_FORWARD(type) { \
-    SLLNode_##type *n = sslNewNode_##type(x); \
+#define SLLB_APPEND(type) \
+  void sllbAppend_##type(SLLB_##type *b, type *x, bool possessed) { \
+    SLL_##type *n = malloc(sizeof(SLL_##type)); \
+    n->x = x; \
+    n->possessed = possessed; \
+    n->next = NULL; \
     if (b->head != NULL) \
       b->tail->next = n; \
     else \
@@ -66,68 +90,80 @@
     b->tail = n; \
   }
 
-#define SLL_MATERIALIZE_FORWARD(type) \
-  SLLNode_##type *sllMaterialize_##type (SLLBuilder_##type *b)
+#define SLLB_MATERIALIZE_FORWARD(type) \
+  SLL_##type *sllMaterialize_##type (SLLB_##type *b)
 
-#define SLL_MATERIALIZE(type) \
-  SLL_MATERIALIZE_FORWARD(type) { \
-    SLLNode_##type *n = b->head; \
+#define SLLB_MATERIALIZE(type) \
+  SLLB_MATERIALIZE_FORWARD(type) { \
+    SLL_##type *n = b->head; \
     sllInitBuilder_##type (b); \
     return n; \
   }
 
-#define SLL_PUSH_FORWARD(type) \
-  void sllPush_##type (SLLNode_##type **head, type *x)
-
-#define SLL_PUSH(type) \
-  SLL_PUSH_FORWARD(type) { \
-    SLLNode_##type *n = sslNewNode_##type(x); \
-    if (*head != NULL) \
-      n->next = *head; \
-    *head = n; \
-  }
+//#define SLL_PUSH_POSSESSED_FORWARD(type) \
+//  void sllPushPossessed_##type (SLL_##type **head, type *x)
+//
+//#define SLL_PUSH_WILD_FORWARD(type) \
+//  void sllPushWild_##type (SLL_##type **head, type *x)
+//
+//#define SLL_PUSH(type) \
+//  void sllPush##type(SLL_##type **, type *x, bool possessed { \
+//      "implementation not defined" \
+//  }
 
 #define SLL_POP_FORWARD(type) \
-  type *sllPop_##type (SLLNode_##type **head)
+  SLLBox_##type *sllPop_##type (SLL_##type **head)
 
 #define SLL_POP(type) \
   SLL_POP_FORWARD(type) { \
-    SLLNode_##type *n = *head; \
-    if (*head != NULL) { \
-      type *x = n->x; \
+    SLL_##type *n = *head; \
+    if (n != NULL) { \
+      *head = n->next; \
+      n->next = NULL; \
+    } \
+    return (SLLBox_##type *)n; \
+  }
+
+#define SLL_FREE_FORWARD(type) \
+  void sllFree_##type(SLL_##type **head)
+
+#define SLL_FREE(type) \
+  SLL_FREE_FORWARD(type) { \
+    assert(head != NULL); \
+    SLL_##type *n; \
+    while (*head != NULL) { \
+      n = *head; \
+      if (n->possessed) \
+        free_##type(n->x); \
       *head = n->next; \
       free(n); \
-      return x; \
     } \
-    return NULL; \
   }
 
 #define SLL_H(type) \
-  SLL_NODE(type); \
-  SLL_BUILDER(type); \
-  SLL_NEW_NODE_FORWARD(type); \
-  SLL_INIT_BUILDER_FORWARD(type); \
-  SLL_INIT_ONE_BUILDER_FORWARD(type); \
-  SLL_NEW_ONE_BUILDER_FORWARD(type); \
-  SLL_APPEND_FORWARD(type); \
-  SLL_MATERIALIZE_FORWARD(type); \
-  SLL_PUSH_FORWARD(type); \
-  SLL_POP_FORWARD(type);
+  SLL_BOX_TYPEDEF(type); \
+  SLL_TYPEDEF(type); \
+  SLLB_TYPEDEF(type); \
+  SLLB_INIT_FORWARD(type); \
+  SLLB_APPEND_POSSESSED_FORWARD(type); \
+  SLLB_APPEND_WILD_FORWARD(type); \
+  SLLB_MATERIALIZE_FORWARD(type); \
+  SLL_POP_FORWARD(type); \
+  SLL_FREE_FORWARD(type);
 
 #define SLL_C(type) \
-  SLL_NEW_NODE(type); \
-  SLL_INIT_BUILDER(type); \
-  SLL_INIT_ONE_BUILDER(type); \
-  SLL_NEW_ONE_BUILDER(type); \
-  SLL_APPEND(type); \
-  SLL_MATERIALIZE(type); \
-  SLL_PUSH(type); \
-  SLL_POP(type)
+  SLLB_INIT(type); \
+  SLLB_APPEND(type); \
+  SLLB_APPEND_POSSESSED(type); \
+  SLLB_APPEND_WILD(type); \
+  SLLB_MATERIALIZE(type); \
+  SLL_POP(type); \
+  SLL_FREE(type);
 
 /* ------------ transforms ------------ */
 
 //#define SLL_MAP_FORWARD(from, to) \
-//  SLLNode_##to *sllMap_##from##2##to (SLLNode_##from *h, to *(*f)(from *))
+//  SLL_##to *sllMap_##from##2##to (SLL_##from *h, to *(*f)(from *))
 //
 //#define SLL_MAP(from, to) \
 //  SLL_MAP_FORWARD(from, to) { \
@@ -142,7 +178,7 @@
 //  }
 
 #define SLL_FOLDL_FORWARD(from, accumulator) \
-  accumulator *sllFoldl_##from##2##accumulator (SLLNode_##from *n, accumulator *x, accumulator *(*f)(from *, accumulator *))
+  accumulator *sllFoldl_##from##2##accumulator (SLL_##from *n, accumulator *x, accumulator *(*f)(from *, accumulator *))
 
 #define SLL_FOLDL(from, accumulator) \
   SLL_FOLDL_FORWARD(from, accumulator) { \

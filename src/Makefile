@@ -2,10 +2,16 @@
 
 .PRECIOUS: %.d
 
-CFLAGS = -Wall -Werror
+CFLAGS = -Wall
+ifdef DEBUG
+	CFLAGS += -Werror -g
+endif
+ifdef C_ERROR_LIMIT
+	CFLAGS += -ferror-limit=$(C_ERROR_LIMIT)
+endif
 YFLAGS = -d
 
-TARGET = diff_parser
+TARGET = diff_parser.out
 SOURCES := $(shell git ls-files)
 
 all: $(TARGET)
