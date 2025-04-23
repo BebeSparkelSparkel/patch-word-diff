@@ -324,9 +324,9 @@ void streamFile(MFile CP f, FILE *stream, FP(char) path) {
   { \
     FILE *stream; \
     assert(isClosed(&f)); \
-    ERROR_CONDITION(BadPath, PATH == NULL || *PATH == '\0', ); \
+    ERROR_CONDITION(BadPath, NULL == PATH || '\0' == *PATH, ); \
     stream = fopen(PATH, mode); \
-    ERROR_CONDITION(UnsuccessfulReadOpen, stream == NULL, errorArg.path = PATH); \
+    ERROR_CONDITION(UnsuccessfulReadOpen, NULL == stream, errorArg.path = PATH); \
     streamFile(&f, stream, PATH); \
   }
 
@@ -334,17 +334,17 @@ void streamFile(MFile CP f, FILE *stream, FP(char) path) {
 #define OPEN_WRITE(stream, PATH) \
   ERROR_CONDITION(BadPath, PATH == NULL || *PATH == '\0', ); \
   stream = fopen(PATH, "w"); \
-  ERROR_CONDITION(UnsuccessfulWriteOpen, stream == NULL, errorArg.path = PATH);
+  ERROR_CONDITION(UnsuccessfulWriteOpen, NULL == stream, errorArg.path = PATH);
   */
 
 #define EQUIVALENT(x) EQUIVALENT_ ## x
 #define EQUIVALENT_DEREF(x) EQUIVALENT_DEREF_ ## x
 
-#define EQUIVALENT_NULL(x, ...) x == NULL
-#define EQUIVALENT_INT_MIN(x, ...) x == INT_MIN
-#define EQUIVALENT_EMPTY(...) NULL == NULL
+#define EQUIVALENT_NULL(x, ...) NULL == x
+#define EQUIVALENT_INT_MIN(x, ...) INT_MIN == x
+ #define EQUIVALENT_EMPTY(...) NULL == NULL
 
-#define EQUIVALENT_DEREF_0(x, ...) *(x) == 0
+#define EQUIVALENT_DEREF_0(x, ...) 0 == *(x)
 
 void markClosed(MFile CP f) {
 #define VALUE ASSIGN
@@ -384,14 +384,14 @@ ErrorId advanceToLineCopy(MFile CP from, FILE CP to, const int targetLine) {
   }
   while (from->ungetI >= 0 && from->line < targetLine) {
     c = from->ungetBuf[from->ungetI--];
-    if (c == '\n') ++from->line;
+    if ('\n' == c) ++from->line;
     r = putc(c, to);
     EOF_CHECK(r, to, "tmpfile");
   }
   while (from->line < targetLine) {
     c = getc(from->stream);
     EOF_M_CHECK(c, from);
-    if (c == '\n') ++from->line;
+    if ('\n' == c) ++from->line;
     r = putc(c, to);
     EOF_CHECK(r, to, "tmpfile");
   }
@@ -400,7 +400,7 @@ ErrorId advanceToLineCopy(MFile CP from, FILE CP to, const int targetLine) {
 }
 
 int updatePosition(int c, MFile CP f) {
-  if (c == '\n') {
+  if ('\n' == c) {
     ++f->line;
     f->column = 1;
   }
@@ -425,7 +425,7 @@ char *mGets(char *str, int size, MFile CP f) {
   *str = '\0';
   if (size > 0) {
     str = fgets(str, size, f->stream);
-    if (str == NULL)
+    if (NULL == str)
       return NULL;
     while (*str != '\0') {
       int r;
@@ -443,7 +443,7 @@ int mUngetc(const int c, MFile CP f) {
   assert(c != EOF);
   assert(c >= 0);
   r = ungetc(c, f->stream);
-  if (r == EOF) {
+  if (EOF == r) {
     assert(f->ungetI < UNGET_BUF_SIZE);
     return  f->ungetI < UNGET_BUF_SIZE
       ? f->ungetBuf[f->ungetI++] = c
@@ -461,24 +461,24 @@ ErrorId matchAndCopy(MFile CP src, MFile CP patch, FILE CP to) {
   while(1) {
     c0 = mGetc(src);
     c1 = mGetc(patch);
-    if (c0 == EOF && c1 == EOF) {
+    if (EOF == c0 && EOF == c1) {
       return ferror(src->stream) || ferror(patch->stream) ? FileError : EOF;
     }
-    if (c0 == EOF) {
+    if (EOF == c0) {
       mUngetc(c1, patch);
       return ferror(src->stream) ? FileError : EOF;
     }
-    if (c1 == EOF) {
+    if (EOF == c1) {
       mUngetc(c0, src);
       return ferror(patch->stream) ? FileError : EOF;
     }
     if (c0 != c1) {
       c0 = mUngetc(c0, src);
       c1 = mUngetc(c1, patch);
-      return c0 == EOF || c1 == EOF ? FileError : Success;
+      return EOF == c0 || EOF == c1 ? FileError : Success;
     }
     c1 = putc(c0, to);
-    if (c1 == EOF)
+    if (EOF == c1)
       return FileError;
   }
 }
@@ -507,12 +507,12 @@ PatchControl parsePatchControl(MFile CP f) {
   ASSERT_MFILE(f);
   while (notNullCount > 0) {
     c = mGetc(f);
-    if (c == EOF) return PC_EOF;
+    if (EOF == c) return PC_EOF;
     for(i = 0; i < numPrefixes; ++i) {
       if (ps[i] != NULL) {
-        if (*ps[i] == c) {
+        if (c == *ps[i]) {
           ++ps[i];
-          if (*ps[i] == '\0')
+          if ('\0' == *ps[i])
             return i + 1;
         }
         else {
@@ -523,7 +523,7 @@ PatchControl parsePatchControl(MFile CP f) {
     }
   }
   c = mUngetc(c, f);
-  if (c == EOF)
+  if (EOF == c)
     return PC_EOF;
   return PC_None;
 }
@@ -552,7 +552,7 @@ typedef struct {
 
 #define PARSE_LINE(errorId, numberOfParsedParameters, formatString, errorMessage, ...) \
   end = mGets(buf, PARSE_BUF_SIZE, f); \
-  if (mGets == NULL) { \
+  if (NULL == mGets) { \
     PLM(f, "Failed to get line when parsing."); \
     return FileError; \
   } \
@@ -611,7 +611,7 @@ ErrorId copyRest(MFile CP from, FILE CP to) {
     r = fread(buf, sizeof(char), BUFSIZ, from->stream);
     w = fwrite(buf, sizeof(char), r, to);
     if (r != w) return FileError;
-  } while (r == BUFSIZ);
+  } while (BUFSIZ == r);
   return ferror(from->stream) || ferror(to) ? FileError : Success;
 }
 
@@ -663,10 +663,10 @@ void _log(LogId l) {
 //   size_t i = 0;
 //   for(; *src1 != '\0' && i < dstMax - 1 && src1Max > 0; ++i, ++src1, --src1Max)
 //     dst[i] = *src1;
-//   assert(*src1 == '\0');
+//   assert('\0' == *src1);
 //   for(; *src2 != '\0' && i < dstMax - 1 && src2Max > 0; ++i, ++src2, --src2Max)
 //     dst[i] = *src2;
-//   assert(*src2 == '\0');
+//   assert('\0' == *src2);
 //   dst[++i] = '\0';
 //   return *src2 != '\0' || *src1 != '\0' ? 0 : i;
 // }
@@ -687,7 +687,7 @@ ErrorId tmpFile(FILE **tmp, char CP srcMutable, char CP tmpPath, size_t tmpSize)
 #else
   assert(srcMutable != NULL);
   assert(tmpPath != NULL);
-  assert(tmpSize == PATH_MAX);
+  assert(PATH_MAX == tmpSize);
   char *baseName = NULL,
        *extension = NULL;
   int tmpFileIndex;
@@ -698,7 +698,7 @@ ErrorId tmpFile(FILE **tmp, char CP srcMutable, char CP tmpPath, size_t tmpSize)
   *tmpPath = '\0';
 
   baseName = strrchr(srcMutable, '/');
-  if (baseName == NULL)
+  if (NULL == baseName)
     baseName = srcMutable;
   else
     *baseName++ = '\0';
@@ -710,11 +710,11 @@ ErrorId tmpFile(FILE **tmp, char CP srcMutable, char CP tmpPath, size_t tmpSize)
     tmpSize,
     "%s/%s_%s.%s",
     /* dir_path */
-    baseName == srcMutable ? "." : srcMutable,
+     baseName == srcMutable ? "." : srcMutable,
     /* baseName */
-    *baseName == '\0' ? "tmpfile" : baseName,
+    '\0' == *baseName ? "tmpfile" : baseName,
     /* extension */
-    extension == NULL || extension == baseName
+    NULL == extension || extension == baseName
       ? "" : extension,
     /* tmp extesnion */
     "tmp"
@@ -731,9 +731,9 @@ ErrorId tmpFile(FILE **tmp, char CP srcMutable, char CP tmpPath, size_t tmpSize)
       goto cleanup;
     }
     *tmp = fopen(tmpPath, "r");
-    if (*tmp == NULL) {
+    if (NULL == *tmp) {
       *tmp = fopen(tmpPath, "w");
-      r = tmp == NULL ? UnsuccessfulWriteOpen : Success;
+      r = NULL == tmp ? UnsuccessfulWriteOpen : Success;
       goto cleanup;
     }
     else if (fclose(*tmp)) {
@@ -766,7 +766,7 @@ int main(const int argc, const char **argv) {
 
   for(i = 1; i < argc - 1; ++i) {
     s = argv[i];
-    if (*s++ == '-') {
+    if ('-' == *s++) {
       for (; *s != '\0'; s++)
         switch (*s) {
           case 'v':
@@ -781,11 +781,11 @@ int main(const int argc, const char **argv) {
   logWarningIf(L_TooVerbose, logLevel > LOG_MAX, );
   /* Patch path is the last argument.
    * If `-` then stdin is used. */
-  if (i == argc - 1) {
+  if (argc - 1 == i) {
     patchPath = argv[i];
   }
-  ERROR_CONDITION(MissingPatchFileCommandArgument, patchPath == NULL, )
-  else if (strcmp(patchPath, "-") == 0)
+  ERROR_CONDITION(MissingPatchFileCommandArgument, NULL == patchPath, )
+  else if (!strcmp(patchPath, "-"))
     streamFile(&patch, stdin, "stdin");
   else OPEN_READ(patch, patchPath);
   //else ERROR_CONDITION(BadPatchFilePath, openFile(&patch, patchPath), errorArg.path = patchPath);
