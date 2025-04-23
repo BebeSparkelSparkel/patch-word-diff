@@ -54,12 +54,3 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-# project specific
-y.output
-y.tab.c
-y.tab.h
-src/parser.?
-src/parser_element.bnf
-src/diff_parser
-src/lexer.c
-parser_line_map.awk
