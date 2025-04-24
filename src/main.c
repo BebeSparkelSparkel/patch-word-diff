@@ -959,7 +959,6 @@ int main(const int argc, const char **argv) {
         e = matchAndCopy(&src, &patch, tmp);
         switch (e) {
           case Success:
-            TODO("matchAndCopy success");
             pc = parsePatchControl(&patch);
             switch (pc) {
               case PC_AddStart:
@@ -973,13 +972,23 @@ int main(const int argc, const char **argv) {
               case PC_Git:
                 ps = PS_Git;
                 break;
-              default:
+              case PC_EOF:
+                ps = PS_EOF;
+                break;
+              case PC_None:
+                ERROR_SET(MissMatch, (errorArg.sourceAndPatch = (SourceAndPatch){&src, &patch}));
+                break;
+              case PC_RmEnd:
+              case PC_AddEnd:
+              case PC_Minus:
+              case PC_Plus:
+              case PC_Index:
                 ERROR_SET(ParseFail_InvalidControlInState, (errorArg.stateControl = (StateControl) { &patch, ps, pc }));
                 break;
             }
             break;
           case EOF:
-            TODO("matchAndCopy EOF");
+            ps = PS_EOF;
             break;
           default:
             ERROR_CHECK(e);
@@ -987,13 +996,23 @@ int main(const int argc, const char **argv) {
         }
         break;
       case PS_Add:
-        ERROR_CHECK(copyUntilClose(&patch, tmp));
-        ps = PS_Match;
+        e = copyUntilClose(&patch, tmp);
+        if (EOF == e)
+          ps = PS_EOF;
+        else {
+          ERROR_CHECK(e);
+          ps = PS_Match;
+        }
         break;
       case PS_Remove:
-        ERROR_CHECK(matchAndDiscardUntilClose(&src, &patch));
-        ps = PS_Match;
-        break;
+        e = matchAndDiscardUntilClose(&src, &patch);
+        if (EOF == e)
+          ps = PS_EOF;
+        else {
+          ERROR_CHECK(e);
+          ps = PS_Match;
+        }
+       break;
       case PS_EOF:
         TODO("PS_EOF");
         break;
