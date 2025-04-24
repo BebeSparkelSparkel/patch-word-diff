@@ -13,13 +13,14 @@
 #define TAIL(_, ...) __VA_ARGS__
 #define DROP(x) DROP_ ## x
 #define DROP_2(_, __, ...) __VA_ARGS__
-#define FIRST(f) FIRST_F_ ## f
+#define FIRST(f) FIRST_ ## f
 #define SND(_, x, ...) x
 #define SECOND(f) SECOND_ ## f
 #define THIRD(_, __, x, ...) x
 #define CAT(x, y, ...) x y
 #define CAT3(x, y, z, ...) x y z
 #define COMMA_INTER(x, y, ...) x, y
+#define END_EXPRESSION(x, ...) x;
 #define END_EXPRESSION_INTER(x, y, ...) END_EXPRESSION(x) y
 #define AND_INTER(x, y, ...) (x) && (y)
 
@@ -38,31 +39,83 @@
 #define PREFIX_Log(x) DEFER_STRING_CAT(Log, x)
 #define DEFER_STRING_CAT(x, y) x ## y
 
+#define SELECT_COLUMNS(table, x, y) SELECT_COLUMNS_ ## table ## _ ## x ## _ ## y
+#define SELECT_COLUMNS_1_3(x, _, y, ...) x, y
+#define SELECT_COLUMNS_4_1(x, _, __, y, ...) y, x
+#define SELECT_COLUMNS_5_1(x, _, __, ___, y, ...) y, x
 
 
+#define EXPAND_ARG(x, ...) EXPAND_ARG_ ## x
+#define EXPAND_ARG_APPLY(...) APPLY(__VA_ARGS__)
+#define EXPAND_ARG_CAT(...) CAT(__VA_ARGS__)
+#define EXPAND_ARG_CAT3(...) CAT3(__VA_ARGS__)
+#define EXPAND_ARG_HEAD(...) HEAD(__VA_ARGS__)
+#define EXPAND_ARG_SND(...) SND(__VA_ARGS__)
+#define EXPAND_ARG_SECOND(...) SECOND(__VA_ARGS__)
+#define EXPAND_ARG_TAIL(...) TAIL(__VA_ARGS__)
+#define EXPAND_ARG_DROP(x) EXPAND_ARG_DROP_ ## x
+#define EXPAND_ARG_DROP_2(...) DROP(2)(__VA_ARGS__)
 
 
-#define PATCH_CONTROL_DS(cons, map, ...) \
-  cons(map(__VA_ARGS__, PC_DelStart, "[-"          ), \
-  cons(map(__VA_ARGS__, PC_DelEnd,   "-]"          ), \
-  cons(map(__VA_ARGS__, PC_AddStart, "{+"          ), \
-  cons(map(__VA_ARGS__, PC_AddEnd,   "+}"          ), \
-  cons(map(__VA_ARGS__, PC_Hunk,     "@@ "         ), \
-  cons(map(__VA_ARGS__, PC_DiffGit,  "diff --git " ), \
-  cons(map(__VA_ARGS__, PC_Minus,    "--- "        ), \
-  cons(map(__VA_ARGS__, PC_Plus,     "+++ "        ), \
-       map(__VA_ARGS__, PC_Index,    "index "      )  \
-      ))))))))
+#define ADD_END "+}"
+#define RM_END "-]"
+
+#define PATCH_CONTROL_TABLE(filt, cons, map, ...) \
+  filt(map(__VA_ARGS__, PC_EOF,      "(PC_EOF)"    , = EOF ), \
+  filt(map(__VA_ARGS__, PC_None,     "(PC_None)"   , = 0   ), \
+  cons(map(__VA_ARGS__, PC_RmStart,  "[-"          ,       ), \
+  cons(map(__VA_ARGS__, PC_RmEnd,    RM_END        ,       ), \
+  cons(map(__VA_ARGS__, PC_AddStart, "{+"          ,       ), \
+  cons(map(__VA_ARGS__, PC_AddEnd,   ADD_END       ,       ), \
+  cons(map(__VA_ARGS__, PC_Hunk,     "@@ "         ,       ), \
+  cons(map(__VA_ARGS__, PC_Git,      "diff --git " ,       ), \
+  cons(map(__VA_ARGS__, PC_Minus,    "--- "        ,       ), \
+  cons(map(__VA_ARGS__, PC_Plus,     "+++ "        ,       ), \
+       map(__VA_ARGS__, PC_Index,    "index "      ,       )  \
+      ))))))))))
+
+#define SELECT_COLUMNS_PATCH_CONTROL_TABLE_Enumerator_Assignment SELECT_COLUMNS_1_3
 
 typedef enum {
-  PC_EOF = EOF,
-  PC_None = 0,
-  PATCH_CONTROL_DS(COMMA_INTER, SND)
+  PATCH_CONTROL_TABLE(COMMA_INTER, COMMA_INTER, COMPOSE, EXPAND_ARG(CAT), SELECT_COLUMNS(PATCH_CONTROL_TABLE, Enumerator, Assignment))
 } PatchControl;
+
+#define CASE_RETURN_STRINGIFIED(x) case x: return #x
+const char *patchControl2enumStr(PatchControl x) {
+  switch (x) {
+    PATCH_CONTROL_TABLE(END_EXPRESSION_INTER, END_EXPRESSION_INTER, COMPOSE, CASE_RETURN_STRINGIFIED, HEAD);
+  }
+}
+
+#define CASE_RETURN(x, y, ...) case x: return y
+const char *patchControl2commandStr(PatchControl x) {
+  switch (x) {
+    PATCH_CONTROL_TABLE(END_EXPRESSION_INTER, END_EXPRESSION_INTER, COMPOSE, IDENTITY, CASE_RETURN);
+  }
+}
+
+#define PARSE_STATE_TABLE(cons, map, ...) \
+  cons(map(__VA_ARGS__, PS_End,    = 0), \
+  cons(map(__VA_ARGS__, PS_Git,       ), \
+  cons(map(__VA_ARGS__, PS_Hunk,      ), \
+  cons(map(__VA_ARGS__, PS_Match,     ), \
+  cons(map(__VA_ARGS__, PS_Remove,    ), \
+       map(__VA_ARGS__, PS_Add,       ), \
+      )))))
+
+typedef enum {
+  PARSE_STATE_TABLE(COMMA_INTER, COMPOSE, IDENTITY, CAT)
+} ParseState;
+
+const char *parseState2enumStr(ParseState x) {
+  switch (x) {
+    PARSE_STATE_TABLE(END_EXPRESSION_INTER, COMPOSE, CASE_RETURN_STRINGIFIED, HEAD);
+  }
+}
 
 #define SIZEOF(x) sizeof(x)
 
-#define UNGET_BUF_SIZE PATCH_CONTROL_DS(MAX, COMPOSE, SIZEOF, SND)
+#define UNGET_BUF_SIZE PATCH_CONTROL_TABLE(TAIL, MAX, COMPOSE, SIZEOF, SND)
 
 #define FP(x) const x *const
 #define CP *const
@@ -71,7 +124,7 @@ typedef struct MFile MFile;
 
 #define ERROR_PRINT(...) fprintf(stderr, "ERROR: " __VA_ARGS__)
 
-#define ERROR_DS(cons, map, ...) \
+#define ERROR_TABLE(cons, map, ...) \
   cons(map(__VA_ARGS__, UpdatePosition,  = EOF - 2, \
            ERROR_PRINT("Failed to update position\n")), \
   cons(map(__VA_ARGS__, FileError,  = EOF - 1, \
@@ -114,14 +167,20 @@ typedef struct MFile MFile;
            ERROR_PRINT("Failed to parse Git header path (plus): %s (line %d in %s)\n", errorArg.pathLineMsg.msg, errorArg.pathLineMsg.line, errorArg.pathLineMsg.path)), \
   cons(map(__VA_ARGS__, ParseFail_HunkHeader, , \
            ERROR_PRINT("Failed to parse hunk header: %s (line %d in %s)\n", errorArg.pathLineMsg.msg, errorArg.pathLineMsg.line, errorArg.pathLineMsg.path)), \
+  cons(map(__VA_ARGS__, ParseFail_InvalidControlInState, , \
+           ERROR_PRINT("Found invalid parse control %s \"%s\" in state %s (line %d column %d in %s)\n", patchControl2enumStr(errorArg.stateControl.control), patchControl2commandStr(errorArg.stateControl.control), parseState2enumStr(errorArg.stateControl.state), errorArg.stateControl.f->line, errorArg.stateControl.f->column, errorArg.stateControl.f->path)), \
   cons(map(__VA_ARGS__, PrintFail_GitHeader, , \
            ERROR_PRINT("Failed to print Git header\n")), \
+cons(map(__VA_ARGS__, MissMatch, , \
+           ERROR_PRINT("Characters from source and patch do not match at line %d col %d in %s and line %d col %d in %s\n", \
+                        errorArg.sourceAndPatch.src->line, errorArg.sourceAndPatch.src->column, errorArg.sourceAndPatch.src->path, \
+                        errorArg.sourceAndPatch.patch->line, errorArg.sourceAndPatch.patch->column, errorArg.sourceAndPatch.patch->path)), \
        map(__VA_ARGS__, UnknownError, , \
          fputs("ERROR: Unknown error\n", stderr)) \
-      ))))))))))))))))))))))
+      ))))))))))))))))))))))))
 
 typedef enum {
-  ERROR_DS(COMMA_INTER, COMPOSE, IDENTITY, CAT)
+  ERROR_TABLE(COMMA_INTER, COMPOSE, IDENTITY, CAT)
 } ErrorId;
 
 typedef struct {
@@ -141,6 +200,12 @@ typedef struct {
 } PathLineMsg;
 
 typedef struct {
+  MFile *f;
+  ParseState state;
+  PatchControl control;
+} StateControl;
+
+typedef struct {
   const char *pathA,
              *pathB;
 } PathsAB;
@@ -150,6 +215,11 @@ typedef struct {
                received;
 } PatchControlDiffers;
 
+typedef struct {
+  MFile *src,
+        *patch;
+} SourceAndPatch;
+
 typedef union {
   const char *msg,
              *path;
@@ -158,26 +228,28 @@ typedef union {
   PathLineMsg pathLineMsg;
   PathsAB pathsAB;
   PatchControlDiffers patchControlDiffers;
+  StateControl stateControl;
+  SourceAndPatch sourceAndPatch;
 } ErrorArg;
 ErrorArg errorArg;
 
 
-#define LOG_LEVEL_DS(cons, map, ...) \
+#define LOG_LEVEL_TABLE(cons, map, ...) \
   cons(map(__VA_ARGS__, None,    = 0), \
   cons(map(__VA_ARGS__, Warning,    ), \
   cons(map(__VA_ARGS__, Info,       ), \
   cons(map(__VA_ARGS__, Verbose,    ), \
        map(__VA_ARGS__, Debug,      ) \
       ))))
-#define LOG_MAX LOG_LEVEL_DS(PLUS_INTER, HEAD, 1) - 1
+#define LOG_MAX LOG_LEVEL_TABLE(PLUS_INTER, HEAD, 1) - 1
 
 
 typedef enum {
-  LOG_LEVEL_DS(COMMA_INTER, COMPOSE, PREFIX(Log), CAT)
+  LOG_LEVEL_TABLE(COMMA_INTER, COMPOSE, PREFIX(Log), CAT)
 } LogLevel;
 LogLevel logLevel = LogWarning;
 
-#define LOG_DS(cons, map, ...) \
+#define LOG_TABLE(cons, map, ...) \
   cons(map(__VA_ARGS__, L_None, None, \
            return ), \
   cons(map(__VA_ARGS__, L_TooVerbose, Warning, \
@@ -201,7 +273,7 @@ LogLevel logLevel = LogWarning;
   fprintf(stderr, #level ": " format "\n", __VA_ARGS__)
 
 typedef enum LogId {
-  LOG_DS(COMMA_INTER, SND)
+  LOG_TABLE(COMMA_INTER, SND)
 } LogId;
 
 #define logWarningIf(id, condition, argAssignments) logProto(Warning, id, condition, argAssignments)
@@ -217,7 +289,7 @@ void _log(LogId l);
 
 #ifdef DEVELOPMENT
 #define TODO(msg) \
-      fprintf(stderr, "TODO: %s. Function: %s, File: %s, Line: %d\n", errorArg.todo.msg, __file__, errorArg.todo.file, errorArg.todo.line); \
+      fprintf(stderr, "TODO: %s. Function: %s, File: %s, Line: %d\n", msg, __func__, __FILE__, __LINE__); \
       exit(1);
 #endif /* DEVELOPMENT */
 
@@ -232,7 +304,7 @@ void _log(LogId l);
   }
 #define EOF_M_CHECK(x, f) EOF_CHECK(x, f->stream, f->path)
 
-#define MFILE_DS(cons, map, ...) \
+#define MFILE_TABLE(cons, map, ...) \
   /*                  |  Field  |  Type | Array (Optional) |        OpenInit        |    CloseInit     | */ \
   cons(map(__VA_ARGS__,   stream, FILE *,                  ,          ASSIGN(STREAM),    VALUE(NULL) ), \
   cons(map(__VA_ARGS__,     line,    int,                  ,               ASSIGN(1), VALUE(INT_MIN) ), \
@@ -262,21 +334,12 @@ void _log(LogId l);
 #define STRNCPY(from, n) STRNCPY_ ## from ## _ ## n
 #define STRNCPY_path_PATH_MAX(to, ...) strncpy(to, path, PATH_MAX - 1)
 
-#define END_EXPRESSION(x, ...) x;
-
-#define EXPAND_ARG(x, ...) EXPAND_ARG_ ## x
-#define EXPAND_ARG_APPLY(...) APPLY(__VA_ARGS__)
-#define EXPAND_ARG_CAT3(...) CAT3(__VA_ARGS__)
-
-#define SELECT_COLUMNS(x, y) SELECT_COLUMNS_ ## x ## _ ## y
-#define SELECT_COLUMNS_OpenInit_Field SELECT_COLUMNS_4_1
-#define SELECT_COLUMNS_CloseInit_Field SELECT_COLUMNS_5_1
-#define SELECT_COLUMNS_Field_CloseInit SELECT_COLUMNS_1_5
-#define SELECT_COLUMNS_4_1(x, _, __, y, ...) y, x
-#define SELECT_COLUMNS_5_1(x, _, __, ___, y, ...) y, x
+#define SELECT_COLUMNS_MFILE_TABLE_OpenInit_Field SELECT_COLUMNS_4_1
+#define SELECT_COLUMNS_MFILE_TABLE_CloseInit_Field SELECT_COLUMNS_5_1
+#define SELECT_COLUMNS_MFILE_TABLE_Field_CloseInit SELECT_COLUMNS_1_5
 
 typedef struct MFile {
-  MFILE_DS(END_EXPRESSION_INTER, COMPOSE, EXPAND_ARG(CAT3), FLIP);
+  MFILE_TABLE(END_EXPRESSION_INTER, COMPOSE, EXPAND_ARG(CAT3), FLIP);
 } MFile;
 
 #define ASSERT_FILE(f) \
@@ -290,12 +353,6 @@ typedef struct MFile {
   assert(f->column > 0); \
   assert(f->ungetI >= -1)
 
-#define EXPAND_ARG_HEAD(...) HEAD(__VA_ARGS__)
-#define EXPAND_ARG_SND(...) SND(__VA_ARGS__)
-#define EXPAND_ARG_SECOND(...) SECOND(__VA_ARGS__)
-#define EXPAND_ARG_TAIL(...) TAIL(__VA_ARGS__)
-#define EXPAND_ARG_DROP(x) EXPAND_ARG_DROP_ ## x
-#define EXPAND_ARG_DROP_2(...) DROP(2)(__VA_ARGS__)
 
 #define DREF_FROM(x) DREF_FROM_ ## x
 #define DREF_FROM_f(x) f-> x
@@ -310,7 +367,7 @@ void streamFile(MFile CP f, FILE *stream, FP(char) path) {
   assert(!ferror(stream));
 
 #define STREAM stream
-  MFILE_DS(END_EXPRESSION_INTER, COMPOSE3, EXPAND_ARG(APPLY), EXPAND_ARG(SECOND(DREF_FROM(f))), SELECT_COLUMNS(OpenInit, Field));
+  MFILE_TABLE(END_EXPRESSION_INTER, COMPOSE3, EXPAND_ARG(APPLY), EXPAND_ARG(SECOND(DREF_FROM(f))), SELECT_COLUMNS(MFILE_TABLE, OpenInit, Field));
 #undef STREAM
   //strncpy(f->path, path, PATH_MAX - 1);
   //f->stream = stream;
@@ -349,7 +406,7 @@ void streamFile(MFile CP f, FILE *stream, FP(char) path) {
 void markClosed(MFile CP f) {
 #define VALUE ASSIGN
 #define VALUE_DEREF ASSIGN_DEREF
-  MFILE_DS(END_EXPRESSION_INTER, COMPOSE3, EXPAND_ARG(APPLY), EXPAND_ARG(SECOND(DREF_FROM(f))), SELECT_COLUMNS(CloseInit, Field));
+  MFILE_TABLE(END_EXPRESSION_INTER, COMPOSE3, EXPAND_ARG(APPLY), EXPAND_ARG(SECOND(DREF_FROM(f))), SELECT_COLUMNS(MFILE_TABLE, CloseInit, Field));
 #undef VALUE
 #undef VALUE_DEREF
 }
@@ -367,7 +424,7 @@ int closeFile(MFile CP f) {
 int isClosed(FP(MFile) f) {
 #define VALUE EQUIVALENT
 #define VALUE_DEREF EQUIVALENT_DEREF
-  return MFILE_DS(AND_INTER, COMPOSE3, EXPAND_ARG(APPLY), EXPAND_ARG(SECOND(DREF_FROM(f))), SELECT_COLUMNS(CloseInit, Field));
+  return MFILE_TABLE(AND_INTER, COMPOSE3, EXPAND_ARG(APPLY), EXPAND_ARG(SECOND(DREF_FROM(f))), SELECT_COLUMNS(MFILE_TABLE, CloseInit, Field));
 #undef VALUE
 #undef VALUE_DEREF
 }
@@ -454,40 +511,116 @@ int mUngetc(const int c, MFile CP f) {
 }
 
 ErrorId matchAndCopy(MFile CP src, MFile CP patch, FILE CP to) {
-  int c0, c1;
+  int sc, pc;
   ASSERT_MFILE(src);
   ASSERT_MFILE(patch);
   ASSERT_FILE(to);
   while(1) {
-    c0 = mGetc(src);
-    c1 = mGetc(patch);
-    if (EOF == c0 && EOF == c1) {
+    sc = mGetc(src);
+    pc = mGetc(patch);
+    if (EOF == sc && EOF == pc) {
       return ferror(src->stream) || ferror(patch->stream) ? FileError : EOF;
     }
-    if (EOF == c0) {
-      mUngetc(c1, patch);
-      return ferror(src->stream) ? FileError : EOF;
+    if (EOF == sc) {
+      pc = mUngetc(pc, patch);
+      return EOF == pc || ferror(src->stream) ? FileError : EOF;
     }
-    if (EOF == c1) {
-      mUngetc(c0, src);
-      return ferror(patch->stream) ? FileError : EOF;
+    if (EOF == pc) {
+      sc = mUngetc(sc, src);
+      return EOF == sc || ferror(patch->stream) ? FileError : EOF;
     }
-    if (c0 != c1) {
-      c0 = mUngetc(c0, src);
-      c1 = mUngetc(c1, patch);
-      return EOF == c0 || EOF == c1 ? FileError : Success;
+    if (sc != pc) {
+      sc = mUngetc(sc, src);
+      pc = mUngetc(pc, patch);
+      return EOF == sc || EOF == pc ? FileError : Success;
     }
-    c1 = putc(c0, to);
-    if (EOF == c1)
+    pc = putc(sc, to);
+    if (EOF == pc)
       return FileError;
+  }
+}
+
+ErrorId matchAndDiscardUntilClose(MFile CP src, MFile CP patch) {
+  int sc, pc;
+  ASSERT_MFILE(src);
+  ASSERT_MFILE(patch);
+  while(1) {
+    sc = mGetc(src);
+    pc = mGetc(patch);
+    if (EOF == sc && EOF == pc) {
+      return ferror(src->stream) || ferror(patch->stream) ? FileError : EOF;
+    }
+    if (EOF == sc) {
+      pc = mUngetc(pc, patch);
+      return EOF == pc || ferror(src->stream) ? FileError : EOF;
+    }
+    if (EOF == pc) {
+      sc = mUngetc(sc, src);
+      return EOF == sc || ferror(patch->stream) ? FileError : EOF;
+    }
+    if (sc != pc) {
+      sc = mUngetc(sc, src);
+      if (EOF == sc) {
+        mUngetc(pc, patch);
+        return FileError;
+      }
+      if ('-' == pc) {
+        pc = mGetc(patch);
+        if (']' == pc)
+          return Success;
+        if (EOF == pc) {
+          pc = mUngetc('-', patch);
+          return EOF == pc || ferror(patch->stream) ? FileError : EOF;
+        }
+        pc = mUngetc(pc, patch);
+        if (EOF == pc)
+          return FileError;
+        pc = '-';
+      }
+      pc = mUngetc(pc, patch);
+      return EOF == pc
+        ? FileError
+        : (errorArg.sourceAndPatch = (SourceAndPatch){src, patch}, MissMatch)
+        ;
+    }
+  }
+}
+
+ErrorId copyUntilClose(MFile CP patch, FILE CP to) {
+  int c, r;
+  ASSERT_MFILE(patch);
+  ASSERT_FILE(to);
+  while(1) {
+    c = mGetc(patch);
+    if (EOF == c)
+      return ferror(patch->stream) ? FileError : EOF;
+    if ('+' == c) {
+      c = mGetc(patch);
+      if ('}' == c)
+        return Success;
+      if (EOF == c) {
+        r = putc('+', to);
+        if (EOF == r) {
+          mUngetc('+', patch);
+          return FileError;
+        }
+        return EOF;
+      }
+      c = '+';
+    }
+    r = putc(c, to);
+    if (EOF == r) {
+      mUngetc(c, patch);
+      return FileError;
+    }
   }
 }
 
 int fputPatchControl(PatchControl x, FILE * f) {
   const char *s;
   switch (x) {
-#define SET_S(_, enumerator, string) case enumerator: s = string; break;
-    PATCH_CONTROL_DS(CAT, SET_S);
+#define SET_S(_, enumerator, string, ...) case enumerator: s = string; break;
+    PATCH_CONTROL_TABLE(TAIL, CAT, SET_S);
     case PC_EOF: s = "ERROR: EOF"; break;
     case PC_None: s = "ERROR: No command recognized"; break;
 #undef SET_S
@@ -499,11 +632,11 @@ int fputPatchControl(PatchControl x, FILE * f) {
   ERROR_CONDITION(error, (pc = parsePatchControl(&patch)) != EXPECTED, errorArg.patchControlDiffers.expected = EXPECTED; errorArg.patchControlDiffers.received = pc)
     
 PatchControl parsePatchControl(MFile CP f) {
-  static const int numPrefixes = PATCH_CONTROL_DS(PLUS_INTER, HEAD, 1);
+  static const int numPrefixes = PATCH_CONTROL_TABLE(TAIL, PLUS_INTER, HEAD, 1);
   int notNullCount = numPrefixes,
       i,
       c;
-  const char *ps[] = { PATCH_CONTROL_DS(COMMA_INTER, THIRD, ) };
+  const char *ps[] = { PATCH_CONTROL_TABLE(TAIL, COMMA_INTER, THIRD, ) };
   ASSERT_MFILE(f);
   while (notNullCount > 0) {
     c = mGetc(f);
@@ -547,9 +680,6 @@ typedef struct {
 #define PLM(f, msg) \
   errorArg.pathLineMsg = (PathLineMsg){ f->path, f->line - 1, msg }
 
-#define PL(f) \
-  errorArg.pathLine = (PathLine){ f->path, f->line - 1 }
-
 #define PARSE_LINE(errorId, numberOfParsedParameters, formatString, errorMessage, ...) \
   end = mGets(buf, PARSE_BUF_SIZE, f); \
   if (NULL == mGets) { \
@@ -557,7 +687,7 @@ typedef struct {
     return FileError; \
   } \
   if (*(end - 1) != '\n') { \
-    PL(f); \
+    errorArg.pathLine = (PathLine){ f->path, f->line - 1 }; \
     return ParseFail_BufferOverflow; \
   } \
   c = sscanf(buf, formatString, __VA_ARGS__); \
@@ -626,7 +756,7 @@ ErrorId copyRest(MFile CP from, FILE CP to) {
 
 void error(ErrorId e, MFile CP src, MFile CP patch, FILE CP tmp) {
   switch (e) {
-    ERROR_DS(CAT, CASE_ERROR);
+    ERROR_TABLE(CAT, CASE_ERROR);
     default:
       fprintf(stderr, "ERROR: Unknown error code: %d\n", e);
       e = UnknownError;
@@ -652,7 +782,7 @@ LogArg logArg;
     break;
 void _log(LogId l) {
   switch (l) {
-    LOG_DS(CAT, CASE_LOG)
+    LOG_TABLE(CAT, CASE_LOG)
     default:
       WARN_PRINT("Unknown log id: %d\n", l);
       break;
@@ -755,12 +885,14 @@ cleanup:
 int main(const int argc, const char **argv) {
   int i;
   const char *s;
+  ErrorId e;
   const char *patchPath = NULL;
   MFile src = {0},
         patch = {0};
   char tmpPath[PATH_MAX];
   FILE *tmp = NULL;
   PatchControl pc;
+  ParseState ps;
   GitHeader gh = {0};
   HunkHeader hh = {0};
 
@@ -791,25 +923,74 @@ int main(const int argc, const char **argv) {
   //else ERROR_CONDITION(BadPatchFilePath, openFile(&patch, patchPath), errorArg.path = patchPath);
   logVerbose(L_PatchPath, logArg.path = patch.path);
 
-  while (1) {
-    EXPECTED_CONTROL(PC_DiffGit, ParseFail_GitHeader);
-    ERROR_CHECK(parseGitHeader(&gh, &patch));
-    logDebug(L_GitHeader, logArg.gitHeader = &gh);
-    ERROR_CONDITION(
-        DifferingSourceUpdatePaths,
-        strncmp(gh.pathA, gh.pathB, PATH_MAX) || strncmp(gh.pathA, gh.pathMinus, PATH_MAX) || strncmp(gh.pathA, gh.pathPlus, PATH_MAX),
-        errorArg.pathsAB = ((PathsAB){ gh.pathA, gh.pathB })
-        );
-    logInfo(L_SourcePath, logArg.path = gh.pathA);
+  EXPECTED_CONTROL(PC_Git, ParseFail_GitHeader);
+  ps = PS_Git;
+  while (ps) {
+    switch (ps) {
+      case PS_Git:
+        ERROR_CHECK(parseGitHeader(&gh, &patch));
+        logDebug(L_GitHeader, logArg.gitHeader = &gh);
+        ERROR_CONDITION(
+            DifferingSourceUpdatePaths,
+            strncmp(gh.pathA, gh.pathB, PATH_MAX) || strncmp(gh.pathA, gh.pathMinus, PATH_MAX) || strncmp(gh.pathA, gh.pathPlus, PATH_MAX),
+            errorArg.pathsAB = ((PathsAB){ gh.pathA, gh.pathB })
+            );
+        logInfo(L_SourcePath, logArg.path = gh.pathA);
 
-    OPEN_READ(src, gh.pathA);
-    ERROR_CHECK(tmpFile(&tmp, gh.pathB, tmpPath, sizeof(tmpPath)
+        OPEN_READ(src, gh.pathA);
+        ERROR_CHECK(tmpFile(&tmp, gh.pathB, tmpPath, sizeof(tmpPath)));
 
-    EXPECTED_CONTROL(PC_Hunk, ParseFail_HunkHeader);
-    ERROR_CHECK(parseHunkHeader(&hh, &patch));
-    logDebug(L_HunkHeader, logArg.hunkHeader = &hh);
-
-    matchAndCopy(&src, &patch, tmp
+        EXPECTED_CONTROL(PC_Hunk, ParseFail_HunkHeader);
+        ps = PS_Hunk;
+        break;
+      case PS_Hunk:
+        ERROR_CHECK(parseHunkHeader(&hh, &patch));
+        logDebug(L_HunkHeader, logArg.hunkHeader = &hh);
+        TODO("advanceToLineCopy");
+        ps = PS_Match;
+        break;
+      case PS_Match:
+        e = matchAndCopy(&src, &patch, tmp);
+        switch (e) {
+          case Success:
+            TODO("matchAndCopy success");
+            pc = parsePatchControl(&patch);
+            switch (pc) {
+              case PC_AddStart:
+                ps = PS_Add;
+                break;
+              case PC_RmStart:
+                ps = PS_Remove;
+                break;
+              case PC_Hunk:
+                ps = PS_Hunk;
+              case PC_Git:
+                ps = PS_Git;
+                break;
+              default:
+                ERROR_SET(ParseFail_InvalidControlInState, (errorArg.stateControl = (StateControl) { &patch, ps, pc }));
+                break;
+            }
+            break;
+          case EOF:
+            TODO("matchAndCopy EOF");
+            break;
+          default:
+            ERROR_CHECK(e);
+            break;
+        }
+        break;
+      case PS_Add:
+        ERROR_CHECK(copyUntilClose(&patch, tmp));
+        ps = PS_Match;
+        break;
+      case PS_Remove:
+        ERROR_CHECK(matchAndDiscardUntilClose(&src, &patch));
+        ps = PS_Match;
+        break;
+      case PS_End:
+        break;
+    }
   }
 
   printf("Done");
