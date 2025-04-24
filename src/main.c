@@ -100,8 +100,9 @@ const char *patchControl2commandStr(PatchControl x) {
   cons(map(__VA_ARGS__, PS_Hunk,      ), \
   cons(map(__VA_ARGS__, PS_Match,     ), \
   cons(map(__VA_ARGS__, PS_Remove,    ), \
-       map(__VA_ARGS__, PS_Add,       ), \
-      )))))
+  cons(map(__VA_ARGS__, PS_Add,       ), \
+       map(__VA_ARGS__, PS_EOF,       ), \
+      ))))))
 
 typedef enum {
   PARSE_STATE_TABLE(COMMA_INTER, COMPOSE, IDENTITY, CAT)
@@ -946,8 +947,13 @@ int main(const int argc, const char **argv) {
       case PS_Hunk:
         ERROR_CHECK(parseHunkHeader(&hh, &patch));
         logDebug(L_HunkHeader, logArg.hunkHeader = &hh);
-        TODO("advanceToLineCopy");
-        ps = PS_Match;
+        e = advanceToLineCopy(&src, tmp, hh.minus.start);
+        if (EOF == e)
+          ps = PS_EOF;
+        else {
+          ERROR_CHECK(e);
+          ps = PS_Match;
+        }
         break;
       case PS_Match:
         e = matchAndCopy(&src, &patch, tmp);
@@ -987,6 +993,9 @@ int main(const int argc, const char **argv) {
       case PS_Remove:
         ERROR_CHECK(matchAndDiscardUntilClose(&src, &patch));
         ps = PS_Match;
+        break;
+      case PS_EOF:
+        TODO("PS_EOF");
         break;
       case PS_End:
         break;
