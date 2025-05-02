@@ -12,6 +12,8 @@
 #include "parse.h"
 #include "tmpfile.h"
 
+#define NO_BREAK
+
 #define PARSE_BUF_SIZE BUFSIZ + 2 * MAX(PATH_MAX, INDEX_MAX)
 char parseBuf[PARSE_BUF_SIZE];
 
@@ -61,7 +63,7 @@ int main(const int argc, const char **argv) {
         }
     }
   }
-  logWarningIf(L_TooVerbose, logLevel > LOG_MAX, );
+  logIf(L_TooVerbose, logLevel > LOG_MAX, );
   /* Patch path is the last argument.
    * If `-` then stdin is used. */
   if (argc - 1 == i) {
@@ -72,12 +74,13 @@ int main(const int argc, const char **argv) {
     streamFile(&patch, stdin, "stdin");
   else OPEN_READ(patch, patchPath);
   //else ERROR_CONDITION(BadPatchFilePath, openFile(&patch, patchPath), errorArg.path = patchPath);
-  logVerbose(L_PatchPath, logArg.path = patch.path);
+  log(L_PatchPath, logArg.path = patch.path);
 
   while (ps) {
     TODO("Add logging");
     switch (ps) {
       case PS_Start:
+        log(L_ParseState, logArg.parseState = ps);
         pc = parsePatchControl(&patch);
         switch (pc) {
           case PC_Git: ps = PS_Git; break;
@@ -88,11 +91,14 @@ int main(const int argc, const char **argv) {
         }
         break;
       case PS_Git:
+        log(L_ParseState, logArg.parseState = ps);
         PARSE_GIT_HEADER;
-        logDebug(L_GitHeader, logArg.gitHeader = &gh);
+        log(L_GitHeader, logArg.gitHeader = &gh);
         EXPECTED_CONTROL(PC_Minus);
         ps = PS_Diff;
+        NO_BREAK;
       case PS_Diff:
+        log(L_ParseState, logArg.parseState = ps);
         PARSE_DIFF_HEADER;
         srcPathConst = dh.pathMinus;
         ERROR_CONDITION(
@@ -101,14 +107,16 @@ int main(const int argc, const char **argv) {
           errorArg.pathsAB = ((PathsAB){ dh.pathMinus, dh.pathPlus })
           );
         srcPathMut = dh.pathPlus;
-        logInfo(L_SourcePath, logArg.path = srcPathConst);
+        log(L_SourcePath, logArg.path = srcPathConst);
         OPEN_READ(src, srcPathConst);
         ERROR_CHECK(tmpFile(&tmp, srcPathMut, tmpPath, sizeof(tmpPath), "tmp"));
         EXPECTED_CONTROL(PC_Hunk);
         ps = PS_Hunk;
+        NO_BREAK;
       case PS_Hunk:
+        log(L_ParseState, logArg.parseState = ps);
         PARSE_HUNK_HEADER;
-        logDebug(L_HunkHeader, logArg.hunkHeader = &hh);
+        log(L_HunkHeader, logArg.hunkHeader = &hh);
         e = advanceToLineCopy(&src, tmp, hh.minus.start);
         if (EOF == e) {
           ps = PS_EOF;
@@ -116,7 +124,9 @@ int main(const int argc, const char **argv) {
         }
         ERROR_CHECK(e);
         ps = PS_Match;
+        NO_BREAK;
       case PS_Match:
+        log(L_ParseState, logArg.parseState = ps);
         e = matchAndCopy(&src, &patch, tmp);
         switch (e) {
           case Success:
@@ -157,6 +167,7 @@ int main(const int argc, const char **argv) {
         }
         break;
       case PS_Add:
+        log(L_ParseState, logArg.parseState = ps);
         e = copyUntilClose(&patch, tmp);
         if (EOF == e)
           ps = PS_EOF;
@@ -166,6 +177,7 @@ int main(const int argc, const char **argv) {
         }
         break;
       case PS_Remove:
+        log(L_ParseState, logArg.parseState = ps);
         e = matchAndDiscardUntilClose(&src, &patch);
         if (EOF == e)
           ps = PS_EOF;
@@ -175,6 +187,7 @@ int main(const int argc, const char **argv) {
         }
        break;
       case PS_EOF:
+        log(L_ParseState, logArg.parseState = ps);
         if (EOF == pc) {
 					TODO("PS_EOF and EOF == pc");
           ps = PS_FinalizeSource;
@@ -196,6 +209,7 @@ int main(const int argc, const char **argv) {
         }
         break;
       case PS_FinalizeSource:
+        log(L_ParseState, logArg.parseState = ps);
         ERROR_CHECK(copyRest(&src, tmp, tmpPath));
 #ifdef _WIN32
         /* Windows requires the destination file to not exist */
@@ -211,10 +225,10 @@ int main(const int argc, const char **argv) {
 #else
         ERROR_CONDITION(RenameFile, rename(tmpPath, srcPathConst), errorArg.pathsAB = ((PathsAB){tmpPath, srcPathConst}));
 #endif /* _WIN32 */
-        TODO("PS_FinalizeSource set ending state");
-        //ps = TODO;
-        break;
+        ps = PS_End;
+        NO_BREAK;
       case PS_End:
+        log(L_ParseState, logArg.parseState = ps);
         ERROR_CHECK(closeFile(&patch));
         ps = PS_ExitLoop;
         break;
