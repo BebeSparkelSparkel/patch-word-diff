@@ -1,6 +1,10 @@
 OBJS = error.o logging.o main.o mfile.o parseState.o patchControl.o tmpfile.o transfer.o
 
-patchw: $(OBJS)
+TARGET = patchw
+
+: $(TARGET)
+
+$(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
 %.d: %.c
@@ -9,3 +13,5 @@ patchw: $(OBJS)
 DEPS = $(OBJS:.o=.d)
 -include $(DEPS)
 
+clean:
+	rm -f $(TARGET) $(OBJS) $(DEPS)

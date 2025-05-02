@@ -38,7 +38,7 @@ int main(const int argc, const char **argv) {
   char tmpPath[PATH_MAX];
   FILE *tmp = NULL;
   PatchControl pc;
-  ParseState ps;
+  ParseState ps = PS_Start;
   GitHeader gh = {0};
   DiffHeader dh = {0};
   HunkHeader hh = {0};
@@ -77,7 +77,7 @@ int main(const int argc, const char **argv) {
   log(L_PatchPath, logArg.path = patch.path);
 
   while (ps) {
-    TODO("Add logging");
+    /* TODO("Add logging"); */
     switch (ps) {
       case PS_Start:
         log(L_ParseState, logArg.parseState = ps);
@@ -132,20 +132,11 @@ int main(const int argc, const char **argv) {
           case Success:
             pc = parsePatchControl(&patch);
             switch (pc) {
-              case PC_AddStart:
-                ps = PS_Add;
-                break;
-              case PC_RmStart:
-                ps = PS_Remove;
-                break;
-              case PC_Hunk:
-                ps = PS_Hunk;
-              case PC_Git:
-                ps = PS_Git;
-                break;
-              case PC_EOF:
-                ps = PS_EOF;
-                break;
+              case PC_AddStart: ps = PS_Add;    break;
+              case PC_RmStart:  ps = PS_Remove; break;
+              case PC_Hunk:     ps = PS_Hunk;   break;
+              case PC_Git:      ps = PS_Git;    break;
+              case PC_EOF:      ps = PS_EOF;    break;
               case PC_None:
                 ERROR_SET(MissMatch, (errorArg.sourceAndPatch = (SourceAndPatch){&src, &patch}));
                 break;
@@ -189,18 +180,13 @@ int main(const int argc, const char **argv) {
       case PS_EOF:
         log(L_ParseState, logArg.parseState = ps);
         if (EOF == pc) {
-					TODO("PS_EOF and EOF == pc");
           ps = PS_FinalizeSource;
+          break;
         } else if (feof(src.stream)) {
-          TODO("PS_EOF src is EOF. "
-               "Check if patch is done matching on src. "
-               "If done, move tmp to src, "
-               "otherwise error. "
-              );
           pc = parsePatchControl(&patch);
           switch (pc) {
-            case PC_EOF: ps = PS_EOF; break;
-            case PC_Git: ps = PS_Git; break;
+            case PC_EOF:   ps = PS_FinalizeSource; break;
+            case PC_Git:   ps = PS_Git; break;
             case PC_Minus: ps = PS_Diff; break;
             default: UNEXPECTED_CONTROL(PC_EOF, PC_Git, PC_Minus);
           }

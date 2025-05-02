@@ -185,7 +185,6 @@ ErrorId copyRest(MFile CP from, FILE CP to, FP(char) toPath) {
     ERROR_CONDITION(FileError, MF_ERROR_CHECK(from) || ferror(to), );
   }
   ERROR_CHECK(closeFile(from));
-  ERROR_CONDITION(FileError, e, )
   ERROR_CONDITION(UnsuccessfulFileClose, fclose(to), errorArg.path = toPath);
   return Success;
 }
