@@ -44,6 +44,7 @@
 #define ERROR_H
 
 #include <stdio.h>
+#include <errno.h>
 
 #include "patchControl.h"
 #include "parseState.h"
@@ -96,6 +97,10 @@
            ERROR_PRINT("Failed to close file: %s\n", errorArg.path)), \
   cons(map(__VA_ARGS__, DifferingSourceUpdatePaths, , \
            ERROR_PRINT("Differing source update paths of %s and %s\n", errorArg.pathsAB.pathA, errorArg.pathsAB.pathB)), \
+  cons(map(__VA_ARGS__, RenameFile, , \
+           ERROR_PRINT("Failed to rename file from '%s' to '%s': %s\n", errorArg.pathsAB.pathA, errorArg.pathsAB.pathB, strerror(errno))), \
+  cons(map(__VA_ARGS__, RemoveFile, , \
+           ERROR_PRINT("Failed to remove file '%s': %s\n", errorArg.path, strerror(errno))), \
   cons(map(__VA_ARGS__, CannotFindLineInUpdateFile, , \
            ERROR_PRINT("Cannot find line %d in update file %s\n", errorArg.pathLine.line, errorArg.pathLine.path)), \
   cons(map(__VA_ARGS__, ParseFail_BufferOverflow, , \
@@ -143,11 +148,11 @@
                         errorArg.sourceAndPatch.patch->line, errorArg.sourceAndPatch.patch->column, errorArg.sourceAndPatch.patch->path)), \
   cons(map(__VA_ARGS__, UndefinedBehavior, , \
            ERROR_PRINT("Undefined behavior of %s\n", errorArg.msg)), \
-	cons(map(__VA_ARGS__, WarningAsError, , \
-	     	   TODO("werror pring")), \
+  cons(map(__VA_ARGS__, WarningAsError, , \
+           TODO("werror pring")), \
        map(__VA_ARGS__, UnknownError, , \
            ERROR_PRINT("Unknown error\n")) \
-      ))))))))))))))))))))))))))))
+      ))))))))))))))))))))))))))))))
 
 typedef enum {
   ERROR_TABLE(COMMA_INTER, COMPOSE, IDENTITY, CAT)
