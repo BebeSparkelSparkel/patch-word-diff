@@ -4,7 +4,7 @@
 #include "tmpfile.h"
 #include "error.h"
 
-ErrorId tmpFile(FILE **tmp, char CP srcMutable, char CP tmpPath, size_t tmpSize) {
+ErrorId tmpFile(FILE **tmp, char CP srcMutable, char CP tmpPath, size_t tmpSize, FP(char) ext) {
 #ifdef _WIN32
 #error "Implement tmpFilePath for windows"
 #else
@@ -40,7 +40,7 @@ ErrorId tmpFile(FILE **tmp, char CP srcMutable, char CP tmpPath, size_t tmpSize)
     NULL == extension || extension == baseName
       ? "" : extension,
     /* tmp extesnion */
-    "tmp"
+    ext
     );
   if (unindexedCharCount >= tmpSize) {
     r = TmpPathBufferOverflow;

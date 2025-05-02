@@ -13,6 +13,6 @@ ErrorId matchAndDiscardUntilClose(MFile CP src, MFile CP patch);
 
 ErrorId copyUntilClose(MFile CP patch, FILE CP to);
 
-ErrorId copyRest(MFile CP from, FILE CP to);
+ErrorId copyRest(MFile CP from, FILE CP to, FP(char) toPath);
 
 #endif

@@ -99,7 +99,7 @@ int main(const int argc, const char **argv) {
         srcPathMut = dh.pathPlus;
         logInfo(L_SourcePath, logArg.path = srcPathConst);
         OPEN_READ(src, srcPathConst);
-        ERROR_CHECK(tmpFile(&tmp, srcPathMut, tmpPath, sizeof(tmpPath)));
+        ERROR_CHECK(tmpFile(&tmp, srcPathMut, tmpPath, sizeof(tmpPath), "tmp"));
         EXPECTED_CONTROL(PC_Hunk);
         ps = PS_Hunk;
       case PS_Hunk:
@@ -192,14 +192,21 @@ int main(const int argc, const char **argv) {
         }
         break;
       case PS_FinalizeSource:
-        ERROR_CHECK(copyRest(&src, tmp));
-        ERROR_CHECK(closeFile(&src));
-        ERROR_CONDITION(UnsuccessfulFileClose, fclose(tmp), errorArg.path = tmpPath);
+        ERROR_CHECK(copyRest(&src, tmp, tmpPath));
 #ifdef _WIN32
-          /* Windows requires the destination file to not exist */
-          ERROR_CONDITION(FileError, remove(srcPathConst) && errno != ENOENT, errorArg.path = srcPathConst);
+        /* Windows requires the destination file to not exist */
+        {
+          char backupPath[PATH_MAX];
+          strcpy(backupPath, tmpPath);
+          strcpy(strrchr(backupPath, '.') + 1, "BAK"); /* set extension to backup */
+          ERROR_CHECK(tmpFile(&tmp, srcPathMut, backupPath, sizeof(backupPath), "BAK"));
+          ERROR_CONDITION(RenameFile, rename(srcPathConst, backupPath), errorArg.pathsAB = ((PathsAB){srcPathConst, backupPath}));
+          ERROR_CONDITION(RenameFile, rename(tmpPath, srcPathConst), errorArg.pathsAB = ((PathsAB){tmpPath, srcPathConst}));
+          ERROR_CONDITION(RemoveFile, remove(backupPath), errorArg.path = backupPath);
+        }
+#else
+        ERROR_CONDITION(RenameFile, rename(tmpPath, srcPathConst), errorArg.pathsAB = ((PathsAB){tmpPath, srcPathConst}));
 #endif /* _WIN32 */
-        ERROR_CONDITION(FileError, rename(tmpPath, srcPathConst), errorArg.path = srcPathConst);
         TODO("PS_FinalizeSource set ending state");
         //ps = TODO;
         break;

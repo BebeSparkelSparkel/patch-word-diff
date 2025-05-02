@@ -3,6 +3,7 @@
 
 #include <limits.h>
 
+#include "error.h"
 #include "cpp.h"
 #include "patchControl.h"
 
@@ -17,6 +18,10 @@
     return EOF; \
   }
 #define EOF_MFILE_CHECK(x, f) EOF_FILE_CHECK(x, f->stream, f->path)
+
+#define MF_ERROR_CHECK(f) \
+  ferror((f)->stream)
+
 
 #define MFILE_TABLE(cons, map, ...) \
   /*                  |  Field  |  Type | Array (Optional) |        OpenInit        |    CloseInit     | */ \
@@ -62,7 +67,7 @@ void streamFile(MFile CP f, FILE *stream, FP(char) path);
     streamFile(&f, stream, PATH); \
   }
 
-int closeFile(MFile CP f);
+ErrorId closeFile(MFile CP f);
 
 int isClosed(FP(MFile) f);
 

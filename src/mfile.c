@@ -28,7 +28,7 @@ static void markClosed(MFile CP f) {
 #undef VALUE_DEREF
 }
 
-int closeFile(MFile CP f) {
+ErrorId closeFile(MFile CP f) {
   int r;
   ASSERT_MFILE(f);
   ERROR_CONDITION(UnsuccessfulFileClose, fclose(f->stream), errorArg.path = f->path);

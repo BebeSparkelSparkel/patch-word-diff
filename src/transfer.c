@@ -1,4 +1,6 @@
 #include <assert.h>
+#include <ctype.h>
+#include <unistd.h>
 
 #include "transfer.h"
 #include "mfile.h"
@@ -28,36 +30,55 @@ ErrorId advanceToLineCopy(MFile CP from, FILE CP to, const int targetLine) {
 }
 
 ErrorId matchAndCopy(MFile CP src, MFile CP patch, FILE CP to) {
-  int sc, pc;
+  int sc, pc, e;
   ASSERT_MFILE(src);
   ASSERT_MFILE(patch);
   ASSERT_FILE(to);
   while(1) {
     sc = mGetc(src);
     pc = mGetc(patch);
-    if (EOF == sc && EOF == pc) {
-      ERROR_CONDITION(FileError, ferror(src->stream) || ferror(patch->stream), );
-      return EOF;
-    }
-    if (EOF == sc) {
-      pc = mUngetc(pc, patch);
-      ERROR_CONDITION(FileError, EOF == pc || ferror(src->stream), );
-      return EOF;
-    }
-    if (EOF == pc) {
-      sc = mUngetc(sc, src);
-      ERROR_CONDITION(FileError, EOF == sc || ferror(patch->stream), );
-      return EOF;
-    }
+    if (EOF == sc || EOF == pc)
+      goto eofHandler;
     if (sc != pc) {
+      if (isspace(sc) && isspace(pc)) {
+        do {
+          e = putc(sc, to);
+          ERROR_CONDITION(FileError, EOF == e, mUngetc(sc, src));
+          sc = mGetc(src);
+        } while(isspace(sc));
+        ERROR_CONDITION(FileError, EOF == sc && MF_ERROR_CHECK(src), );
+        do {
+          pc = mGetc(patch);
+        } while(isspace(pc));
+        ERROR_CONDITION(FileError, EOF == pc && MF_ERROR_CHECK(patch), );
+        if (EOF == sc || EOF == pc)
+          goto eofHandler;
+      }
       sc = mUngetc(sc, src);
       pc = mUngetc(pc, patch);
       ERROR_CONDITION(FileError, EOF == sc || EOF == pc, );
       return Success;
     }
-    pc = putc(sc, to);
-    ERROR_CONDITION(FileError, EOF == pc, );
+    e = putc(sc, to);
+    ERROR_CONDITION(FileError, EOF == e, mUngetc(sc, src));
   }
+  ERROR_SET(UndefinedBehavior, errorArg.msg = "matchAndCopy loop unexpectedly exited");
+  eofHandler:
+  if (EOF == sc && EOF == pc) {
+    ERROR_CONDITION(FileError, MF_ERROR_CHECK(src) || MF_ERROR_CHECK(patch), );
+    return EOF;
+  }
+  if (EOF == sc) {
+    e = mUngetc(pc, patch);
+    ERROR_CONDITION(FileError, EOF == e || MF_ERROR_CHECK(src), );
+    return EOF;
+  }
+  if (EOF == pc) {
+    e = mUngetc(sc, src);
+    ERROR_CONDITION(FileError, EOF == e || MF_ERROR_CHECK(patch), );
+    return EOF;
+  }
+  ERROR_SET(UndefinedBehavior, errorArg.msg = "matchAndCopy eofHandler did not find EOF");
 }
 
 ErrorId matchAndDiscardUntilClose(MFile CP src, MFile CP patch) {
@@ -68,17 +89,17 @@ ErrorId matchAndDiscardUntilClose(MFile CP src, MFile CP patch) {
     sc = mGetc(src);
     pc = mGetc(patch);
     if (EOF == sc && EOF == pc) {
-      ERROR_CONDITION(FileError, ferror(src->stream) || ferror(patch->stream), );
+      ERROR_CONDITION(FileError, MF_ERROR_CHECK(src) || MF_ERROR_CHECK(patch), );
       return EOF;
     }
     if (EOF == sc) {
       pc = mUngetc(pc, patch);
-      ERROR_CONDITION(FileError, EOF == pc || ferror(src->stream), );
+      ERROR_CONDITION(FileError, EOF == pc || MF_ERROR_CHECK(src), );
       return EOF;
     }
     if (EOF == pc) {
       sc = mUngetc(sc, src);
-      ERROR_CONDITION(FileError, EOF == sc || ferror(patch->stream), );
+      ERROR_CONDITION(FileError, EOF == sc || MF_ERROR_CHECK(patch), );
       return EOF;
     }
     if (sc != pc) {
@@ -90,7 +111,7 @@ ErrorId matchAndDiscardUntilClose(MFile CP src, MFile CP patch) {
           return Success;
         if (EOF == pc) {
           pc = mUngetc('-', patch);
-          ERROR_CONDITION(FileError, EOF == pc || ferror(patch->stream), );
+          ERROR_CONDITION(FileError, EOF == pc || MF_ERROR_CHECK(patch), );
           return EOF;
         }
         pc = mUngetc(pc, patch);
@@ -111,7 +132,7 @@ ErrorId copyUntilClose(MFile CP patch, FILE CP to) {
   while(1) {
     c = mGetc(patch);
     if (EOF == c) {
-      ERROR_CONDITION(FileError, ferror(patch->stream), );
+      ERROR_CONDITION(FileError, MF_ERROR_CHECK(patch), );
       return EOF;
     }
     if ('+' == c) {
@@ -130,16 +151,42 @@ ErrorId copyUntilClose(MFile CP patch, FILE CP to) {
   }
 }
 
-ErrorId copyRest(MFile CP from, FILE CP to) {
-  size_t r, w;
+ErrorId copyRest(MFile CP from, FILE CP to, FP(char) toPath) {
   ASSERT_MFILE(from);
   ASSERT_FILE(to);
-  do {
-    r = fread(parseBuf, sizeof(char), BUFSIZ, from->stream);
-    w = fwrite(parseBuf, sizeof(char), r, to);
-    ERROR_CONDITION(FileError, r != w, );
-  } while (BUFSIZ == r);
-  ERROR_CONDITION(FileError, ferror(from->stream) || ferror(to), );
+  int src_fd, to_fd, e;
+  long src_pos;
+  if ( (src_fd = fileno(from->stream)) != -1
+    && (to_fd = fileno(to)) != -1
+    && (src_pos = ftell(from->stream)) != -1
+    && lseek(src_fd, src_pos, SEEK_SET) != -1
+    ) {
+    /* Unbufferd file transfer */
+    size_t r;
+    ssize_t w;
+    e = fflush(to);
+    ERROR_CONDITION(FileError, e, );
+    do {
+      r = read(src_fd, parseBuf, BUFSIZ);
+      if (r > 0) {
+        w = write(to_fd, parseBuf, r);
+        ERROR_CONDITION(FileError, (size_t)w != r, );
+      }
+    } while (r == BUFSIZ);
+    ERROR_CONDITION(FileError, r == (size_t)-1 || MF_ERROR_CHECK(from) || ferror(to), );
+  } else {
+    /* Fallback to original buffered I/O approach without seeking */
+    size_t r, w;
+    do {
+      r = fread(parseBuf, sizeof(char), BUFSIZ, from->stream);
+      w = fwrite(parseBuf, sizeof(char), r, to);
+      ERROR_CONDITION(FileError, r != w, );
+    } while (BUFSIZ == r);
+    ERROR_CONDITION(FileError, MF_ERROR_CHECK(from) || ferror(to), );
+  }
+  ERROR_CHECK(closeFile(from));
+  ERROR_CONDITION(FileError, e, )
+  ERROR_CONDITION(UnsuccessfulFileClose, fclose(to), errorArg.path = toPath);
   return Success;
 }
 
