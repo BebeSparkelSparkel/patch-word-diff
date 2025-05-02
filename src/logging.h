@@ -14,19 +14,19 @@
 
 #define LOG_TABLE(cons, map, ...) \
   cons(map(__VA_ARGS__, L_None, None, \
-           return ), \
+           "" ), \
   cons(map(__VA_ARGS__, L_TooVerbose, Warning, \
-           WARN_PRINT("Logging only supports verbosity of %d but received %d", LOG_MAX, logLevel) ), \
+           WARN_FORMAT("Logging only supports verbosity of %d but received %d", LOG_MAX, logLevel) ), \
   cons(map(__VA_ARGS__, L_PatchPath, Verbose, \
-           VERB_PRINT("Patch Path: %s", logArg.path) ), \
+           VERB_FORMAT("Patch Path: %s", logArg.path) ), \
   cons(map(__VA_ARGS__, L_GitHeader, Debug, \
-           DBUG_PRINT( FORMAT_GIT_HEADER(*logArg.gitHeader) ) ), \
+           DBUG_FORMAT( FORMAT_GIT_HEADER(*logArg.gitHeader) ) ), \
   cons(map(__VA_ARGS__, L_HunkHeader, Debug, \
-           DBUG_PRINT( FORMAT_HUNK_HEADER(*logArg.hunkHeader) ) ), \
+           DBUG_FORMAT( FORMAT_HUNK_HEADER(*logArg.hunkHeader) ) ), \
   cons(map(__VA_ARGS__, L_SourcePath, Info, \
-           INFO_PRINT("Patching source file: %s", logArg.path) ), \
+           INFO_FORMAT("Patching source file: %s", logArg.path) ), \
        map(__VA_ARGS__, L_Message, Info, \
-           INFO_PRINT("%s", logArg.message) ) \
+           INFO_FORMAT("%s", logArg.message) ) \
       ))))))
 
 #define LOG_MAX LOG_LEVEL_TABLE(PLUS_INTER, HEAD, 1) - 1
@@ -38,19 +38,19 @@ typedef enum {
 
 extern LogLevel logLevel; /* should probably default to LogWarning */
 
-#define WARN_PRINT(...) fprintf(stderr, PROTO_LOG_FORMAT(WARN, __VA_ARGS__))
-#define INFO_PRINT(...) fprintf(stderr, PROTO_LOG_FORMAT(INFO, __VA_ARGS__))
-#define VERB_PRINT(...) fprintf(stderr, PROTO_LOG_FORMAT(VERB, __VA_ARGS__))
-#define DBUG_PRINT(...) fprintf(stderr, PROTO_LOG_FORMAT(DBUG, __VA_ARGS__))
+#define WARN_FORMAT(...) PROTO_LOG_FORMAT(WARN, __VA_ARGS__)
+#define INFO_FORMAT(...) PROTO_LOG_FORMAT(INFO, __VA_ARGS__)
+#define VERB_FORMAT(...) PROTO_LOG_FORMAT(VERB, __VA_ARGS__)
+#define DBUG_FORMAT(...) PROTO_LOG_FORMAT(DBUG, __VA_ARGS__)
 
-// TODO utilize PROTO_LOG_FORMAT in the error messages
-// TODO add LogId to ErrorArg for error typing
 #define PROTO_LOG_FORMAT(level, format, ...) \
   #level ": " format "\n", __VA_ARGS__
 
 typedef enum LogId {
   LOG_TABLE(COMMA_INTER, SND)
 } LogId;
+
+extern LogId logId;
 
 extern char werror; /* if true warnings are errors */
 

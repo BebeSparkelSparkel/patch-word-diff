@@ -149,10 +149,13 @@
   cons(map(__VA_ARGS__, UndefinedBehavior, , \
            ERROR_PRINT("Undefined behavior of %s\n", errorArg.msg)), \
   cons(map(__VA_ARGS__, WarningAsError, , \
-           TODO("werror pring")), \
+           switch(logId) { LOG_TABLE(CAT, CASE_LOG_ERROR) } ), \
        map(__VA_ARGS__, UnknownError, , \
            ERROR_PRINT("Unknown error\n")) \
       ))))))))))))))))))))))))))))))
+
+#define CASE_LOG_ERROR(_, id, __, format, ...) \
+  case id: ERROR_PRINT(format); break;
 
 typedef enum {
   ERROR_TABLE(COMMA_INTER, COMPOSE, IDENTITY, CAT)
@@ -213,6 +216,7 @@ typedef union {
   UnexpectedPatchControl unexpectedPatchControl;
   StateControl stateControl;
   SourceAndPatch sourceAndPatch;
+  LogId logId;
 } ErrorArg;
 
 extern ErrorArg errorArg;

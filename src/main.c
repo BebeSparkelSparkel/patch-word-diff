@@ -17,6 +17,7 @@ char parseBuf[PARSE_BUF_SIZE];
 
 ErrorArg errorArg;
 LogLevel logLevel = LogWarning;
+LogId logId;
 LogArg logArg;
 char werror = 0;
 
@@ -50,6 +51,9 @@ int main(const int argc, const char **argv) {
             break;
           case 'q':
             logLevel = LogNone;
+            break;
+          case 'w':
+            werror = 1;  // Set warnings as errors
             break;
           default:
             ERROR_SET(UndefinedFlag, errorArg.undefinedFlag.c = *s; errorArg.undefinedFlag.argString = argv[i]);

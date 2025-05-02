@@ -2,9 +2,9 @@
 
 #include "logging.h"
 
-#define CASE_LOG(_, id, __, action) \
+#define CASE_LOG(_, id, __, format) \
   case id: \
-    action; \
+    fprintf(stderr, format); \
     break;
 
 void _log(LogId l) {
