@@ -29,7 +29,6 @@ static void markClosed(struct MFile CP f) {
 }
 
 enum ErrorId closeFile(struct MFile CP f) {
-  int r;
   ASSERT_MFILE(f);
   ERROR_CONDITION(UnsuccessfulFileClose, fclose(f->stream), errorArg.path = f->path);
   markClosed(f);
