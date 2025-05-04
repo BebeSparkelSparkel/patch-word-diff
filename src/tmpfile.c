@@ -4,74 +4,60 @@
 #include "tmpfile.h"
 #include "error.h"
 
-ErrorId tmpFile(FILE **tmp, char CP srcMutable, char CP tmpPath, size_t tmpSize, FP(char) ext) {
+ErrorId tmpFile(FILE * CP tmp, const char srcPath[PATH_MAX], char tmpPath[PATH_MAX], FP(char) ext) {
 #ifdef _WIN32
 #error "Implement tmpFilePath for windows"
 #else
-  assert(NULL != srcMutable);
+  char *extension;
+  int i;
+  size_t tmpPathLen,
+         count;
+  FILE *f;
+
+  assert(NULL == tmp || NULL == *tmp);
+  assert(NULL != srcPath);
   assert(NULL != tmpPath);
-  assert(PATH_MAX == tmpSize);
-  char *baseName = NULL,
-       *extension = NULL;
-  int tmpFileIndex;
-  size_t unindexedCharCount,
-         indexedCharCount;
-  ErrorId r;
+  assert('\0' == *tmpPath);
+  assert(NULL != ext);
+  assert(PATH_MAX > strlen(srcPath));
 
-  *tmpPath = '\0';
+  strncpy(tmpPath, srcPath, PATH_MAX - 1);
+  extension = strrchr(tmpPath, '.');
+  if (NULL != extension)
+    *extension = '_';
+  tmpPathLen = strlen(tmpPath);
 
-  baseName = strrchr(srcMutable, '/');
-  if (NULL == baseName)
-    baseName = srcMutable;
-  else
-    *baseName++ = '\0';
-
-  extension = strrchr(baseName, '.');
-  
-  unindexedCharCount = snprintf(
-    tmpPath,
-    tmpSize,
-    "%s/%s_%s.%s",
-    /* dir_path */
-     baseName == srcMutable ? "." : srcMutable,
-    /* baseName */
-    '\0' == *baseName ? "tmpfile" : baseName,
-    /* extension */
-    NULL == extension || extension == baseName
-      ? "" : extension,
-    /* tmp extesnion */
-    ext
-    );
-  if (unindexedCharCount >= tmpSize) {
-    r = TmpPathBufferOverflow;
-    goto cleanup;
+  count = strlen(ext) + 1;
+  ERROR_CONDITION( TmpPathBufferOverflow
+                 , PATH_MAX - 1 - tmpPathLen < count
+                 , errorArg.path = tmpPath
+  ) else {
+    tmpPath[tmpPathLen] = '.';
+    strcpy(&tmpPath[tmpPathLen + 1], ext);
+    tmpPathLen += count;
   }
-  tmpSize -= unindexedCharCount;
-  for (tmpFileIndex = 0; tmpFileIndex <= INT_MAX; ++tmpFileIndex) {
-    indexedCharCount = snprintf(tmpPath + unindexedCharCount, tmpSize, "%d", tmpFileIndex);
-    if (indexedCharCount >= tmpSize) {
-      r = TmpPathBufferOverflow;
-      goto cleanup;
-    }
-    *tmp = fopen(tmpPath, "r");
-    if (NULL == *tmp) {
-      *tmp = fopen(tmpPath, "w");
-      r = NULL == tmp ? UnsuccessfulWriteOpen : Success;
-      goto cleanup;
-    }
-    else if (fclose(*tmp)) {
-      r =  UnsuccessfulFileClose;
-      goto cleanup;
-    }
-  }
-  strcpy(tmpPath + indexedCharCount, "0");
-  r = CouldNotOpenTmpFile;
 
-cleanup:
-  *srcMutable = '\0';
-  if (r != Success)
-    errorArg.path = tmpPath;
-  return r;
+  for (i = 0; i < INT_MAX; ++i) {
+    count = snprintf(tmpPath + tmpPathLen, PATH_MAX - 1 - tmpPathLen, "%d", i);
+    ERROR_CONDITION( TmpPathBufferOverflow
+                   , count > PATH_MAX - 1 - tmpPathLen
+                   , errorArg.path = tmpPath
+                   );
+    f = fopen(tmpPath, "r");
+    if (NULL == f) {
+      f = fopen(tmpPath, "w");
+      ERROR_CONDITION(UnsuccessfulWriteOpen, NULL == f, errorArg.path = tmpPath)
+      else if (NULL != tmp)
+        *tmp = f;
+      else ERROR_CONDITION(UnsuccessfulFileClose, fclose(f), errorArg.path = tmpPath);
+      return Success;
+    }
+    else ERROR_CONDITION(UnsuccessfulFileClose, fclose(f), errorArg.path = tmpPath);
+  }
+  ERROR_SET( CouldNotOpenTmpFile
+           , errorArg.path = strncat(tmpPath + tmpPathLen, "0", PATH_MAX - 1 - tmpPathLen)
+           );
+
 #endif /* _WIN32 */
 }
 

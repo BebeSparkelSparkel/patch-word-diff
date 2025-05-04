@@ -33,8 +33,7 @@ int main(const int argc, const char **argv) {
   const char *patchPath = NULL;
   MFile src = {0},
         patch = {0};
-  const char *srcPathConst;
-  char       *srcPathMut;
+  const char *srcPath;
   char tmpPath[PATH_MAX];
   FILE *tmp = NULL;
   PatchControl pc;
@@ -100,16 +99,15 @@ int main(const int argc, const char **argv) {
       case PS_Diff:
         log(L_ParseState, logArg.parseState = ps);
         PARSE_DIFF_HEADER;
-        srcPathConst = dh.pathMinus;
+        srcPath = dh.pathMinus;
         ERROR_CONDITION(
           DifferingSourceUpdatePaths,
-          strncmp(srcPathConst, dh.pathPlus, PATH_MAX) || (*gh.pathA && (strncmp(srcPathConst, gh.pathA, PATH_MAX) || strncmp(srcPathConst, gh.pathB, PATH_MAX))),
+          strncmp(srcPath, dh.pathPlus, PATH_MAX) || (*gh.pathA && (strncmp(srcPath, gh.pathA, PATH_MAX) || strncmp(srcPath, gh.pathB, PATH_MAX))),
           errorArg.pathsAB = ((PathsAB){ dh.pathMinus, dh.pathPlus })
           );
-        srcPathMut = dh.pathPlus;
-        log(L_SourcePath, logArg.path = srcPathConst);
-        OPEN_READ(src, srcPathConst);
-        ERROR_CHECK(tmpFile(&tmp, srcPathMut, tmpPath, sizeof(tmpPath), "tmp"));
+        log(L_SourcePath, logArg.path = srcPath);
+        OPEN_READ(src, srcPath);
+        ERROR_CHECK(tmpFile(&tmp, srcPath, tmpPath, "tmp"));
         EXPECTED_CONTROL(PC_Hunk);
         ps = PS_Hunk;
         NO_BREAK;
@@ -201,15 +199,13 @@ int main(const int argc, const char **argv) {
         /* Windows requires the destination file to not exist */
         {
           char backupPath[PATH_MAX];
-          strcpy(backupPath, tmpPath);
-          strcpy(strrchr(backupPath, '.') + 1, "BAK"); /* set extension to backup */
-          ERROR_CHECK(tmpFile(&tmp, srcPathMut, backupPath, sizeof(backupPath), "BAK"));
-          ERROR_CONDITION(RenameFile, rename(srcPathConst, backupPath), errorArg.pathsAB = ((PathsAB){srcPathConst, backupPath}));
-          ERROR_CONDITION(RenameFile, rename(tmpPath, srcPathConst), errorArg.pathsAB = ((PathsAB){tmpPath, srcPathConst}));
+          ERROR_CHECK(tmpFile(NULL, srcPath, backupPath, "BAK"));
+          ERROR_CONDITION(RenameFile, rename(srcPath, backupPath), errorArg.pathsAB = ((PathsAB){srcPath, backupPath}));
+          ERROR_CONDITION(RenameFile, rename(tmpPath, srcPath), errorArg.pathsAB = ((PathsAB){tmpPath, srcPath}));
           ERROR_CONDITION(RemoveFile, remove(backupPath), errorArg.path = backupPath);
         }
 #else
-        ERROR_CONDITION(RenameFile, rename(tmpPath, srcPathConst), errorArg.pathsAB = ((PathsAB){tmpPath, srcPathConst}));
+        ERROR_CONDITION(RenameFile, rename(tmpPath, srcPath), errorArg.pathsAB = ((PathsAB){tmpPath, srcPath}));
 #endif /* _WIN32 */
         ps = PS_End;
         NO_BREAK;

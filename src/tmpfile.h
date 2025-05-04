@@ -3,7 +3,6 @@
 
 #include "error.h"
 
-/** srcMutable string is mutated and set to a zero length string */
-ErrorId tmpFile(FILE **tmp, char CP srcMutable, char CP tmpPath, size_t tmpSize, FP(char) ext);
+ErrorId tmpFile(FILE * CP tmp, FP(char) srcPath, char CP tmpPath, FP(char) ext);
 
 #endif
