@@ -9,13 +9,13 @@
   ERROR_CONDITION( \
     ParseFail_ExpectedControl, \
     (pc = parsePatchControl(&patch)) != EXPECTED, \
-    (errorArg.patchControlDiffers = (PatchControlDiffers){ &patch, EXPECTED, pc}) \
+    (errorArg.patchControlDiffers = (struct PatchControlDiffers){ &patch, EXPECTED, pc}) \
   )
 
 #define UNEXPECTED_CONTROL(...) \
   ERROR_SET( \
     ParseFail_UnexpectedControl, \
-    errorArg.unexpectedPatchControl = ((UnexpectedPatchControl){ &patch, pc, #__VA_ARGS__ }) \
+    errorArg.unexpectedPatchControl = ((struct UnexpectedPatchControl){ &patch, pc, #__VA_ARGS__ }) \
   )
  
 #define PATCH_CONTROL_TABLE(filt, cons, map, ...) \
@@ -34,16 +34,16 @@
 
 #define _SELECT_COLUMNS_PATCH_CONTROL_TABLE_Enumerator_Assignment _SELECT_COLUMNS_1_3
 
-typedef enum {
+enum PatchControl {
   PATCH_CONTROL_TABLE(COMMA_INTER, COMMA_INTER, COMPOSE, EXPAND_ARG(CAT), SELECT_COLUMNS(PATCH_CONTROL_TABLE, Enumerator, Assignment))
-} PatchControl;
+};
 
-const char *patchControl2enumStr(PatchControl x);
+const char *patchControl2enumStr(enum PatchControl x);
 
-const char *patchControl2commandStr(PatchControl x);
+const char *patchControl2commandStr(enum PatchControl x);
 
-typedef struct MFile MFile;
+struct MFile;
 
-PatchControl parsePatchControl(MFile CP f);
+enum PatchControl parsePatchControl(struct MFile CP f);
 
 #endif

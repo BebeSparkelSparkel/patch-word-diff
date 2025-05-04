@@ -54,7 +54,7 @@
   if (LogWarning >= logLevel) \
     fprintf(stderr, "ERROR: " __VA_ARGS__); \
   else { \
-    const ErrorOrigin *origin; \
+    const struct ErrorOrigin *origin; \
     origin = popErrorOrigin(); \
     assert(NULL != origin); \
     fprintf(stderr, "ERROR [at %s:%d in %s]: ", \
@@ -157,69 +157,69 @@
 #define CASE_LOG_ERROR(_, id, __, format, ...) \
   case id: ERROR_PRINT(format); break;
 
-typedef enum {
+enum ErrorId {
   ERROR_TABLE(COMMA_INTER, COMPOSE, IDENTITY, CAT)
-} ErrorId;
+};
 
-typedef struct {
+struct CharInString {
   char c;
   const char *argString;
-} CharInString;
+};
 
-typedef struct {
+struct PathLine {
   const char *path;
   int line;
-} PathLine;
+};
 
-typedef struct {
+struct PathLineMsg {
   const char *path;
   int line;
   const char *msg;
-} PathLineMsg;
+};
 
-typedef struct {
-  MFile *f;
-  ParseState state;
-  PatchControl control;
-} StateControl;
+struct StateControl {
+  struct MFile *f;
+  enum ParseState state;
+  enum PatchControl control;
+};
 
-typedef struct {
+struct PathsAB {
   const char *pathA,
              *pathB;
-} PathsAB;
+};
 
-typedef struct {
-  MFile *f;
-  PatchControl expected,
-               received;
-} PatchControlDiffers;
+struct PatchControlDiffers {
+  struct MFile *f;
+  enum PatchControl expected,
+                    received;
+};
 
-typedef struct {
-  MFile *f;
-  PatchControl unexpected;
+struct UnexpectedPatchControl {
+  struct MFile *f;
+  enum PatchControl unexpected;
   const char *expected;
-} UnexpectedPatchControl;
+};
 
-typedef struct {
-  MFile *src,
-        *patch;
-} SourceAndPatch;
+struct SourceAndPatch {
+  struct MFile *src,
+               *patch;
+};
 
-typedef union {
+union ErrorArg {
   const char *msg,
              *path;
-  CharInString undefinedFlag;
-  PathLine pathLine;
-  PathLineMsg pathLineMsg;
-  PathsAB pathsAB;
-  PatchControlDiffers patchControlDiffers;
-  UnexpectedPatchControl unexpectedPatchControl;
-  StateControl stateControl;
-  SourceAndPatch sourceAndPatch;
-  LogId logId;
-} ErrorArg;
+  struct CharInString undefinedFlag;
+  struct PathLine pathLine;
+  struct PathLineMsg pathLineMsg;
+  struct PathsAB pathsAB;
+  struct PatchControlDiffers patchControlDiffers;
+  struct UnexpectedPatchControl unexpectedPatchControl;
+  struct StateControl stateControl;
+  struct SourceAndPatch sourceAndPatch;
+  enum LogId logId;
+};
 
-extern ErrorArg errorArg;
+extern union ErrorArg errorArg;
 
 
 #define SET_ORIGIN_EOF(value) SET_ORIGIN_CONDITIONALLY(value, EQUIVALENT(EOF))
@@ -227,16 +227,16 @@ extern ErrorArg errorArg;
 #define SET_ORIGIN_CONDITIONALLY(value, condition) if (condition(value)) { SET_ORIGIN }
 #define SET_ORIGIN pushErrorOrigin(__FILE__, __func__, __LINE__)
 
-typedef struct {
+struct ErrorOrigin {
   const char *path,
              *function;
   int line;
-} ErrorOrigin;
+};
 
 void pushErrorOrigin(FP(char) file, FP(char) func, const int line);
 
-const ErrorOrigin *popErrorOrigin(void);
+const struct ErrorOrigin *popErrorOrigin(void);
 
-void error(ErrorId e, MFile CP src, MFile CP patch, FILE CP tmp);
+void error(enum ErrorId e, struct MFile CP src, struct MFile CP patch, FILE CP tmp);
 
 #endif /* ERROR_H */

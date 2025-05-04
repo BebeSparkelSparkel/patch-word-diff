@@ -8,7 +8,7 @@
     ERROR_CHECK(FileError); \
   } \
   if (*(s - 1) != '\n') { \
-    errorArg.pathLine = (PathLine){ patch.path, patch.line - 1 }; \
+    errorArg.pathLine = (struct PathLine){ patch.path, patch.line - 1 }; \
     ERROR_CHECK(ParseFail_BufferOverflow); \
   } \
   i = sscanf(parseBuf, formatString, __VA_ARGS__); \
@@ -18,6 +18,6 @@
   }
 
 #define PLM(f, msg) \
-  errorArg.pathLineMsg = (PathLineMsg){ f.path, f.line - 1, msg }
+  errorArg.pathLineMsg = (struct PathLineMsg){ f.path, f.line - 1, msg }
 
 #endif

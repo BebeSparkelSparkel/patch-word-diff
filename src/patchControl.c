@@ -3,19 +3,19 @@
 #include "mfile.h"
 #include "patchControl.h"
 
-const char *patchControl2enumStr(PatchControl x) {
+const char *patchControl2enumStr(enum PatchControl x) {
   switch (x) {
     PATCH_CONTROL_TABLE(END_EXPRESSION_INTER, END_EXPRESSION_INTER, COMPOSE, CASE_RETURN_STRINGIFIED, HEAD);
   }
 }
 
-const char *patchControl2commandStr(PatchControl x) {
+const char *patchControl2commandStr(enum PatchControl x) {
   switch (x) {
     PATCH_CONTROL_TABLE(END_EXPRESSION_INTER, END_EXPRESSION_INTER, COMPOSE, IDENTITY, CASE_RETURN);
   }
 }
 
-PatchControl parsePatchControl(MFile CP f) {
+enum PatchControl parsePatchControl(struct MFile CP f) {
   static const int numPrefixes = PATCH_CONTROL_TABLE(TAIL, PLUS_INTER, HEAD, 1);
   int notNullCount = numPrefixes,
       i,

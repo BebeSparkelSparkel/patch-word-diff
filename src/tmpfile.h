@@ -3,6 +3,6 @@
 
 #include "error.h"
 
-ErrorId tmpFile(FILE * CP tmp, FP(char) srcPath, char CP tmpPath, FP(char) ext);
+enum ErrorId tmpFile(FILE * CP tmp, FP(char) srcPath, char CP tmpPath, FP(char) ext);
 
 #endif

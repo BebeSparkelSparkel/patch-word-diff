@@ -8,7 +8,7 @@
 #define _SELECT_COLUMNS_MFILE_TABLE_CloseInit_Field _SELECT_COLUMNS_5_1
 #define _SELECT_COLUMNS_MFILE_TABLE_Field_CloseInit _SELECT_COLUMNS_1_5
 
-void streamFile(MFile CP f, FILE *stream, FP(char) path) {
+void streamFile(struct MFile CP f, FILE *stream, FP(char) path) {
   assert(f != NULL);
   assert(path != NULL);
   assert(stream != NULL);
@@ -20,7 +20,7 @@ void streamFile(MFile CP f, FILE *stream, FP(char) path) {
 #undef STREAM
 }
 
-static void markClosed(MFile CP f) {
+static void markClosed(struct MFile CP f) {
 #define VALUE ASSIGN
 #define VALUE_DEREF ASSIGN_DEREF
   MFILE_TABLE(END_EXPRESSION_INTER, COMPOSE3, EXPAND_ARG(APPLY), EXPAND_ARG(SECOND(DREF_FROM(f))), SELECT_COLUMNS(MFILE_TABLE, CloseInit, Field));
@@ -28,7 +28,7 @@ static void markClosed(MFile CP f) {
 #undef VALUE_DEREF
 }
 
-ErrorId closeFile(MFile CP f) {
+enum ErrorId closeFile(struct MFile CP f) {
   int r;
   ASSERT_MFILE(f);
   ERROR_CONDITION(UnsuccessfulFileClose, fclose(f->stream), errorArg.path = f->path);
@@ -36,7 +36,7 @@ ErrorId closeFile(MFile CP f) {
   return Success;
 }
 
-int isClosed(FP(MFile) f) {
+int isClosed(FP(struct MFile) f) {
 #define VALUE EQUIVALENT
 #define VALUE_DEREF EQUIVALENT_DEREF
   return MFILE_TABLE(AND_INTER, COMPOSE3, EXPAND_ARG(APPLY), EXPAND_ARG(SECOND(DREF_FROM(f))), SELECT_COLUMNS(MFILE_TABLE, CloseInit, Field));
@@ -44,7 +44,7 @@ int isClosed(FP(MFile) f) {
 #undef VALUE_DEREF
 }
 
-static int updatePosition(int c, MFile CP f) {
+static int updatePosition(int c, struct MFile CP f) {
   if ('\n' == c) {
     ++f->line;
     f->column = 1;
@@ -54,7 +54,7 @@ static int updatePosition(int c, MFile CP f) {
   return c;
 }
 
-int mGetc(MFile CP f) {
+int mGetc(struct MFile CP f) {
   int c;
   ASSERT_MFILE(f);
   c = f->ungetI >= 0
@@ -63,7 +63,7 @@ int mGetc(MFile CP f) {
   return updatePosition(c, f);
 }
 
-char *mGets(char *str, int size, MFile CP f) {
+char *mGets(char *str, int size, struct MFile CP f) {
   while (f->ungetI >= 0 && size > 1) {
     *str++ = f->ungetBuf[f->ungetI--];
   }
@@ -81,7 +81,7 @@ char *mGets(char *str, int size, MFile CP f) {
   return str;
 }
 
-int mUngetc(const int c, MFile CP f) {
+int mUngetc(const int c, struct MFile CP f) {
   int r;
   ASSERT_MFILE(f);
   assert(c != '\n');

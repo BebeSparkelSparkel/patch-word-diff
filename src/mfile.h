@@ -33,9 +33,9 @@
        map(__VA_ARGS__,     path,   char,        [PATH_MAX], STRNCPY(path, PATH_MAX), VALUE_DEREF(0) ) \
       )))))
 
-typedef struct MFile {
+struct MFile {
   MFILE_TABLE(END_EXPRESSION_INTER, COMPOSE, EXPAND_ARG(CAT3), FLIP);
-} MFile;
+};
 
 #define ASSERT_MFILE(f) \
   assert(f != NULL); \
@@ -48,7 +48,7 @@ typedef struct MFile {
   assert(!ferror(f)); \
   assert(!feof(f))
 
-void streamFile(MFile CP f, FILE *stream, FP(char) path);
+void streamFile(struct MFile CP f, FILE *stream, FP(char) path);
 
 #define OPEN_READ(f, path) OPEN_MODE(f, path, "r")
 /*
@@ -67,16 +67,16 @@ void streamFile(MFile CP f, FILE *stream, FP(char) path);
     streamFile(&f, stream, PATH); \
   }
 
-ErrorId closeFile(MFile CP f);
+enum ErrorId closeFile(struct MFile CP f);
 
-int isClosed(FP(MFile) f);
+int isClosed(FP(struct MFile) f);
 
 
-int mGetc(MFile CP f);
+int mGetc(struct MFile CP f);
 
-char *mGets(char *str, int size, MFile CP f);
+char *mGets(char *str, int size, struct MFile CP f);
 
-int mUngetc(const int c, MFile CP f);
+int mUngetc(const int c, struct MFile CP f);
 
 
 #endif

@@ -11,13 +11,13 @@
 #define TRACE_SIZE 3
 #endif
 
-static ErrorOrigin errorOrigin[TRACE_SIZE];
+static struct ErrorOrigin errorOrigin[TRACE_SIZE];
 static int count = -1;
 
 #define CASE_ERROR(_, e, __, action) \
   case e: action; break;
 
-void error(ErrorId e, MFile CP src, MFile CP patch, FILE CP tmp) {
+void error(enum ErrorId e, struct MFile CP src, struct MFile CP patch, FILE CP tmp) {
   switch (e) {
     ERROR_TABLE(CAT, CASE_ERROR);
     default:
@@ -32,10 +32,10 @@ void error(ErrorId e, MFile CP src, MFile CP patch, FILE CP tmp) {
 }
 
 void pushErrorOrigin(FP(char) file, FP(char) func, const int line) {
-  errorOrigin[++count % TRACE_SIZE] = (ErrorOrigin){ __FILE__, __func__, __LINE__ };
+  errorOrigin[++count % TRACE_SIZE] = (struct ErrorOrigin){ __FILE__, __func__, __LINE__ };
 }
 
-const ErrorOrigin *popErrorOrigin(void) {
+const struct ErrorOrigin *popErrorOrigin(void) {
   static int end = -1;
   assert(count >= 0);
   if (end == -1)

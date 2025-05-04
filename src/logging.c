@@ -14,7 +14,7 @@
     fprintf(stderr, LEVEL_PREFIX(level) ":" format); \
     break;
 
-void _log(LogId l) {
+void _log(enum LogId l) {
   switch (l) {
     LOG_TABLE(CAT, CASE_LOG)
   }
@@ -23,7 +23,7 @@ void _log(LogId l) {
 #define CASE_ID_2_LEVEL(_, id, level, ...) \
   case id: return Log ## level;
 
-LogLevel logIdLevel(LogId x) {
+enum LogLevel logIdLevel(enum LogId x) {
   switch (x) {
     LOG_TABLE(CAT, CASE_ID_2_LEVEL);
   }

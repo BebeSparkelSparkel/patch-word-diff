@@ -1,5 +1,5 @@
-#ifndef GITHEADER_H
-#define GITHEADER_H
+#ifndef HEADERS_H
+#define HEADERS_H
 
 #include <limits.h>
 
@@ -8,13 +8,13 @@
 #ifndef INDEX_MAX
 #define INDEX_MAX 256
 #endif
-typedef struct {
+struct GitHeader {
   char pathA[PATH_MAX],
        pathB[PATH_MAX],
        indexA[INDEX_MAX],
        indexB[INDEX_MAX];
   int mode; /* should check to ensure enough bits to hold mode */
-} GitHeader;
+};
 
 #define FORMAT_GIT_HEADER(gh, ...) \
   "diff --git a/%s b/%s\nindex %s..%s %d\n", (gh).pathA, (gh).pathB, (gh).indexA, (gh).indexB, (gh).mode
@@ -25,10 +25,10 @@ typedef struct {
 
 /* Diff Patch Header */
 
-typedef struct {
+struct DiffHeader {
   char pathMinus[PATH_MAX],
        pathPlus[PATH_MAX];
-} DiffHeader;
+};
 
 #define FORMAT_DIFF_HEADER(dh, ...) \
   "--- a/%s\n+++ b/%s\n", (dh).pathMinus, (dh).pathPlus
@@ -39,15 +39,15 @@ typedef struct {
 
 /* Hunk Patch Header */
 
-typedef struct {
+struct StartEnd {
   int start,
       end;
-} StartEnd;
+};
 
-typedef struct {
-  StartEnd minus,
-           plus;
-} HunkHeader;
+struct HunkHeader {
+  struct StartEnd minus,
+                  plus;
+};
 
 #define FORMAT_HUNK_HEADER(h) \
   "@@ -%d,%d +%d,%d @@\n", (h).minus.start, (h).minus.end, (h).plus.start, (h).plus.end

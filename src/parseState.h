@@ -17,10 +17,10 @@
        map(__VA_ARGS__, PS_EOF,               ) \
       ))))))))))
 
-typedef enum {
+enum ParseState {
   PARSE_STATE_TABLE(COMMA_INTER, COMPOSE, IDENTITY, CAT)
-} ParseState;
+};
 
-const char *parseState2enumStr(ParseState x);
+const char *parseState2enumStr(enum ParseState x);
 
 #endif

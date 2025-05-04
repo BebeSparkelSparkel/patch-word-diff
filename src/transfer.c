@@ -5,13 +5,13 @@
 #include "transfer.h"
 #include "mfile.h"
 
-ErrorId advanceToLineCopy(MFile CP from, FILE CP to, const int targetLine) {
+enum ErrorId advanceToLineCopy(struct MFile CP from, FILE CP to, const int targetLine) {
   int c, r;
   ASSERT_MFILE(from);
   ASSERT_FILE(to);
   assert(targetLine > 0);
   assert(from->line <= targetLine);
-  ERROR_CONDITION(CannotFindLineInUpdateFile, from->line > targetLine, errorArg.pathLine = ((PathLine){ from->path, targetLine }));
+  ERROR_CONDITION(CannotFindLineInUpdateFile, from->line > targetLine, errorArg.pathLine = ((struct PathLine){ from->path, targetLine }));
   while (from->ungetI >= 0 && from->line < targetLine) {
     c = from->ungetBuf[from->ungetI--];
     if ('\n' == c) ++from->line;
@@ -29,7 +29,7 @@ ErrorId advanceToLineCopy(MFile CP from, FILE CP to, const int targetLine) {
   return Success;
 }
 
-ErrorId matchAndCopy(MFile CP src, MFile CP patch, FILE CP to) {
+enum ErrorId matchAndCopy(struct MFile CP src, struct MFile CP patch, FILE CP to) {
   int sc, pc, e;
   ASSERT_MFILE(src);
   ASSERT_MFILE(patch);
@@ -81,7 +81,7 @@ ErrorId matchAndCopy(MFile CP src, MFile CP patch, FILE CP to) {
   ERROR_SET(UndefinedBehavior, errorArg.msg = "matchAndCopy eofHandler did not find EOF");
 }
 
-ErrorId matchAndDiscardUntilClose(MFile CP src, MFile CP patch) {
+enum ErrorId matchAndDiscardUntilClose(struct MFile CP src, struct MFile CP patch) {
   int sc, pc;
   ASSERT_MFILE(src);
   ASSERT_MFILE(patch);
@@ -120,12 +120,12 @@ ErrorId matchAndDiscardUntilClose(MFile CP src, MFile CP patch) {
       }
       pc = mUngetc(pc, patch);
       ERROR_CONDITION(FileError, EOF == pc, );
-      ERROR_SET(MissMatch, errorArg.sourceAndPatch = ((SourceAndPatch){src, patch}));
+      ERROR_SET(MissMatch, errorArg.sourceAndPatch = ((struct SourceAndPatch){src, patch}));
     }
   }
 }
 
-ErrorId copyUntilClose(MFile CP patch, FILE CP to) {
+enum ErrorId copyUntilClose(struct MFile CP patch, FILE CP to) {
   int c, r;
   ASSERT_MFILE(patch);
   ASSERT_FILE(to);
@@ -151,7 +151,7 @@ ErrorId copyUntilClose(MFile CP patch, FILE CP to) {
   }
 }
 
-ErrorId copyRest(MFile CP from, FILE CP to, FP(char) toPath) {
+enum ErrorId copyRest(struct MFile CP from, FILE CP to, FP(char) toPath) {
   ASSERT_MFILE(from);
   ASSERT_FILE(to);
   int src_fd, to_fd, e;

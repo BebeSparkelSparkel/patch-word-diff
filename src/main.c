@@ -17,10 +17,10 @@
 #define PARSE_BUF_SIZE BUFSIZ + 2 * MAX(PATH_MAX, INDEX_MAX)
 char parseBuf[PARSE_BUF_SIZE];
 
-ErrorArg errorArg;
-LogLevel logLevel = LogWarning;
-LogId logId;
-LogArg logArg;
+union ErrorArg errorArg;
+enum LogLevel logLevel = LogWarning;
+enum LogId logId;
+union LogArg logArg;
 char werror = 0;
 
 #define IN_MAIN_FUNCTION
@@ -29,18 +29,18 @@ char werror = 0;
 int main(const int argc, const char **argv) {
   int i;
   const char *s;
-  ErrorId e;
+  enum ErrorId e;
   const char *patchPath = NULL;
-  MFile src = {0},
-        patch = {0};
+  struct MFile src = {0},
+               patch = {0};
   const char *srcPath;
   char tmpPath[PATH_MAX];
   FILE *tmp = NULL;
-  PatchControl pc;
-  ParseState ps = PS_Start;
-  GitHeader gh = {0};
-  DiffHeader dh = {0};
-  HunkHeader hh = {0};
+  enum PatchControl pc;
+  enum ParseState ps = PS_Start;
+  struct GitHeader gh = {0};
+  struct DiffHeader dh = {0};
+  struct HunkHeader hh = {0};
 
   for(i = 1; i < argc - 1; ++i) {
     s = argv[i];
@@ -103,7 +103,7 @@ int main(const int argc, const char **argv) {
         ERROR_CONDITION(
           DifferingSourceUpdatePaths,
           strncmp(srcPath, dh.pathPlus, PATH_MAX) || (*gh.pathA && (strncmp(srcPath, gh.pathA, PATH_MAX) || strncmp(srcPath, gh.pathB, PATH_MAX))),
-          errorArg.pathsAB = ((PathsAB){ dh.pathMinus, dh.pathPlus })
+          errorArg.pathsAB = ((struct PathsAB){ dh.pathMinus, dh.pathPlus })
           );
         log(L_SourcePath, logArg.path = srcPath);
         OPEN_READ(src, srcPath);
@@ -136,14 +136,14 @@ int main(const int argc, const char **argv) {
               case PC_Git:      ps = PS_Git;    break;
               case PC_EOF:      ps = PS_EOF;    break;
               case PC_None:
-                ERROR_SET(MissMatch, (errorArg.sourceAndPatch = (SourceAndPatch){&src, &patch}));
+                ERROR_SET(MissMatch, (errorArg.sourceAndPatch = (struct SourceAndPatch){&src, &patch}));
                 break;
               case PC_RmEnd:
               case PC_AddEnd:
               case PC_Minus:
               case PC_Plus:
               case PC_Index:
-                ERROR_SET(ParseFail_InvalidControlInState, (errorArg.stateControl = (StateControl) { &patch, ps, pc }));
+                ERROR_SET(ParseFail_InvalidControlInState, (errorArg.stateControl = (struct StateControl){ &patch, ps, pc }));
                 break;
             }
             break;
@@ -200,12 +200,12 @@ int main(const int argc, const char **argv) {
         {
           char backupPath[PATH_MAX];
           ERROR_CHECK(tmpFile(NULL, srcPath, backupPath, "BAK"));
-          ERROR_CONDITION(RenameFile, rename(srcPath, backupPath), errorArg.pathsAB = ((PathsAB){srcPath, backupPath}));
-          ERROR_CONDITION(RenameFile, rename(tmpPath, srcPath), errorArg.pathsAB = ((PathsAB){tmpPath, srcPath}));
+          ERROR_CONDITION(RenameFile, rename(srcPath, backupPath), errorArg.pathsAB = ((struct PathsAB){srcPath, backupPath}));
+          ERROR_CONDITION(RenameFile, rename(tmpPath, srcPath), errorArg.pathsAB = ((struct PathsAB){tmpPath, srcPath}));
           ERROR_CONDITION(RemoveFile, remove(backupPath), errorArg.path = backupPath);
         }
 #else
-        ERROR_CONDITION(RenameFile, rename(tmpPath, srcPath), errorArg.pathsAB = ((PathsAB){tmpPath, srcPath}));
+        ERROR_CONDITION(RenameFile, rename(tmpPath, srcPath), errorArg.pathsAB = ((struct PathsAB){tmpPath, srcPath}));
 #endif /* _WIN32 */
         ps = PS_End;
         NO_BREAK;

@@ -4,7 +4,7 @@
 #include "tmpfile.h"
 #include "error.h"
 
-ErrorId tmpFile(FILE * CP tmp, const char srcPath[PATH_MAX], char tmpPath[PATH_MAX], FP(char) ext) {
+enum ErrorId tmpFile(FILE * CP tmp, const char srcPath[PATH_MAX], char tmpPath[PATH_MAX], FP(char) ext) {
 #ifdef _WIN32
 #error "Implement tmpFilePath for windows"
 #else

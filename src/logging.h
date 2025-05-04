@@ -34,24 +34,24 @@
 
 #define LOG_MAX LOG_LEVEL_TABLE(PLUS_INTER, HEAD, 1) - 1
 
-typedef enum {
+enum LogLevel {
   LOG_LEVEL_TABLE(COMMA_INTER, COMPOSE, PREFIX(Log), CAT)
-} LogLevel;
+};
 
 
-extern LogLevel logLevel; /* should probably default to LogWarning */
+extern enum LogLevel logLevel; /* should probably default to LogWarning */
 
 #define LOG_FORMAT(...) __VA_ARGS__
 
-typedef enum LogId {
+enum LogId {
   LOG_TABLE(COMMA_INTER, SND)
-} LogId;
+};
 
-extern LogId logId;
+extern enum LogId logId;
 
 extern char werror; /* if true warnings are errors */
 
-LogLevel logIdLevel(LogId x);
+enum LogLevel logIdLevel(enum LogId x);
 
 
 #define log(id, argAssignments) \
@@ -65,17 +65,17 @@ LogLevel logIdLevel(LogId x);
       _log(id); \
   }
 
-void _log(LogId l);
+void _log(enum LogId l);
 
-typedef union {
+union LogArg {
   const char *message,
              *path;
-  GitHeader *gitHeader;
-  DiffHeader *diffHeader;
-  HunkHeader *hunkHeader;
-  ParseState parseState;
-} LogArg;
+  struct GitHeader *gitHeader;
+  struct DiffHeader *diffHeader;
+  struct HunkHeader *hunkHeader;
+  enum ParseState parseState;
+};
 
-extern LogArg logArg;
+extern union LogArg logArg;
 
 #endif
