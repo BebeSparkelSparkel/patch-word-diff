@@ -81,12 +81,16 @@
            ERROR_PRINT("Undefined flag '%c' in argument %s\n", errorArg.undefinedFlag.c, errorArg.undefinedFlag.argString)), \
   cons(map(__VA_ARGS__, MissingPatchFileCommandArgument, , \
            ERROR_PRINT("Missing patch file argument\n")), \
+  cons(map(__VA_ARGS__, MissingFollowingCommandArgument, , \
+           ERROR_PRINT("Missing a %s argument after the cli option '%s'" \
+                      , errorArg.optionType.type \
+                      , errorArg.optionType.option)), \
   cons(map(__VA_ARGS__, BadPath, , \
            ERROR_PRINT("Bad path\n")), \
   cons(map(__VA_ARGS__, BadPatchFilePath, , \
            ERROR_PRINT("Bad patch file path: %s\n", errorArg.path)), \
   cons(map(__VA_ARGS__, TmpPathBufferOverflow, , \
-           ERROR_PRINT("Temporary file path buffer overflow\n")), \
+           ERROR_PRINT("Temporary file path buffer overflow. Max path length is " STRINGIFY(PATH_MAX) "\n")), \
   cons(map(__VA_ARGS__, CouldNotOpenTmpFile, , \
            ERROR_PRINT("Failed to open temporary file: %s\n", errorArg.path)), \
   cons(map(__VA_ARGS__, UnsuccessfulReadOpen, , \
@@ -152,7 +156,7 @@
            switch(logId) { LOG_TABLE(CAT, CASE_LOG_ERROR) } ), \
        map(__VA_ARGS__, UnknownError, , \
            ERROR_PRINT("Unknown error\n")) \
-      ))))))))))))))))))))))))))))))
+      )))))))))))))))))))))))))))))))
 
 #define CASE_LOG_ERROR(_, id, __, format, ...) \
   case id: ERROR_PRINT(format); break;
@@ -205,6 +209,11 @@ struct SourceAndPatch {
                *patch;
 };
 
+struct OptionType {
+  const char *option,
+             *type;
+};
+
 union ErrorArg {
   const char *msg,
              *path;
@@ -216,6 +225,7 @@ union ErrorArg {
   struct UnexpectedPatchControl unexpectedPatchControl;
   struct StateControl stateControl;
   struct SourceAndPatch sourceAndPatch;
+  struct OptionType optionType;
   enum LogId logId;
 };
 

@@ -2,6 +2,7 @@
 #define MFILE_H
 
 #include <limits.h>
+#include <assert.h>
 
 #include "error.h"
 #include "cpp.h"
@@ -60,11 +61,11 @@ void streamFile(struct MFile CP f, FILE *stream, FP(char) path);
 #define OPEN_MODE(f, PATH, mode) \
   { \
     FILE *stream; \
-    assert(isClosed(&f)); \
+    assert(isClosed(f)); \
     ERROR_CONDITION(BadPath, NULL == PATH || '\0' == *PATH, ); \
     stream = fopen(PATH, mode); \
     ERROR_CONDITION(UnsuccessfulReadOpen, NULL == stream, errorArg.path = PATH); \
-    streamFile(&f, stream, PATH); \
+    streamFile(f, stream, PATH); \
   }
 
 enum ErrorId closeFile(struct MFile CP f);

@@ -8,14 +8,14 @@
 #define EXPECTED_CONTROL(EXPECTED) \
   ERROR_CONDITION( \
     ParseFail_ExpectedControl, \
-    (pc = parsePatchControl(&patch)) != EXPECTED, \
-    (errorArg.patchControlDiffers = (struct PatchControlDiffers){ &patch, EXPECTED, pc}) \
+    (pc = parsePatchControl(patch)) != EXPECTED, \
+    (errorArg.patchControlDiffers = (struct PatchControlDiffers){ patch, EXPECTED, pc}) \
   )
 
 #define UNEXPECTED_CONTROL(...) \
   ERROR_SET( \
     ParseFail_UnexpectedControl, \
-    errorArg.unexpectedPatchControl = ((struct UnexpectedPatchControl){ &patch, pc, #__VA_ARGS__ }) \
+    errorArg.unexpectedPatchControl = ((struct UnexpectedPatchControl){ patch, pc, #__VA_ARGS__ }) \
   )
  
 #define PATCH_CONTROL_TABLE(filt, cons, map, ...) \

@@ -84,6 +84,8 @@
  * Concatenation and String Manipulation
  ******************************************************************************/
 
+#define STRINGIFY(x) #x
+
 /**
  * Concatenation macros
  */

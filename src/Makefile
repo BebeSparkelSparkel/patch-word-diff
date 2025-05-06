@@ -1,4 +1,4 @@
-OBJS = error.o logging.o main.o mfile.o parseState.o patchControl.o tmpfile.o transfer.o
+OBJS = cli.o error.o logging.o mfile.o parseState.o patchControl.o stateMachine.o tmpfile.o transfer.o main.o 
 
 TARGET = patchw
 
