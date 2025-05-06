@@ -8,7 +8,7 @@
 #include "todo.h"
 
 #ifndef TRACE_SIZE
-#define TRACE_SIZE 3
+#define TRACE_SIZE 256
 #endif
 
 static struct ErrorOrigin errorOrigin[TRACE_SIZE];
