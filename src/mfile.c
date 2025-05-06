@@ -9,9 +9,9 @@
 #define _SELECT_COLUMNS_MFILE_TABLE_Field_CloseInit _SELECT_COLUMNS_1_5
 
 void streamFile(struct MFile CP f, FILE *stream, FP(char) path) {
-  assert(f != NULL);
-  assert(path != NULL);
-  assert(stream != NULL);
+  assert(NULL != f);
+  assert(NULL != path);
+  assert(NULL != stream);
   assert(!feof(stream));
   assert(!ferror(stream));
 #define _ASSIGN_STREAM(x, ...) x = STREAM
@@ -43,7 +43,7 @@ int isClosed(FP(struct MFile) f) {
 #undef VALUE_DEREF
 }
 
-static int updatePosition(int c, struct MFile CP f) {
+static inline int updatePosition(int c, struct MFile CP f) {
   if ('\n' == c) {
     ++f->line;
     f->column = 1;
@@ -56,7 +56,7 @@ static int updatePosition(int c, struct MFile CP f) {
 int mGetc(struct MFile CP f) {
   int c;
   ASSERT_MFILE(f);
-  c = f->ungetI >= 0
+  c = 0 <= f->ungetI
     ? f->ungetBuf[f->ungetI--]
     : getc(f->stream);
   return updatePosition(c, f);
@@ -90,9 +90,9 @@ char *mGets(char CP str, const int size, struct MFile CP f) {
 int mUngetc(const int c, struct MFile CP f) {
   int r;
   ASSERT_MFILE(f);
-  assert(c != '\n');
-  assert(c != EOF);
-  assert(c >= 0);
+  assert('\n' != c);
+  assert(EOF != c);
+  assert(0 <= c);
   r = ungetc(c, f->stream);
   if (EOF == r) {
     assert(f->ungetI < UNGET_BUF_SIZE);

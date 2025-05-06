@@ -23,7 +23,6 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
   const char *srcPath;
 
   while (ps) {
-    /* TODO("Add logging"); */
     switch (ps) {
       case PS_Start:
         log(L_ParseState, logArg.parseState = ps);
