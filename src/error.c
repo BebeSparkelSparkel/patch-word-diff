@@ -31,8 +31,8 @@ void error(enum ErrorId e, struct MFile CP src, struct MFile CP patch, FILE CP t
   exit(e);
 }
 
-void pushErrorOrigin(FP(char) file, FP(char) func, const int line) {
-  errorOrigin[++count % TRACE_SIZE] = (struct ErrorOrigin){ __FILE__, __func__, __LINE__ };
+void _pushErrorOrigin(FP(char) file, FP(char) func, const int line) {
+  errorOrigin[++count % TRACE_SIZE] = (struct ErrorOrigin){ file, func, line };
 }
 
 const struct ErrorOrigin *popErrorOrigin(void) {

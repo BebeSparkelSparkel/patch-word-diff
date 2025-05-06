@@ -225,7 +225,7 @@ extern union ErrorArg errorArg;
 #define SET_ORIGIN_EOF(value) SET_ORIGIN_CONDITIONALLY(value, EQUIVALENT(EOF))
 #define SET_ORIGIN_NE0(value) SET_ORIGIN_CONDITIONALLY(value, !EQUIVALENT(0))
 #define SET_ORIGIN_CONDITIONALLY(value, condition) if (condition(value)) { SET_ORIGIN }
-#define SET_ORIGIN pushErrorOrigin(__FILE__, __func__, __LINE__)
+#define SET_ORIGIN _pushErrorOrigin(__FILE__, __func__, __LINE__)
 
 struct ErrorOrigin {
   const char *path,
@@ -233,7 +233,7 @@ struct ErrorOrigin {
   int line;
 };
 
-void pushErrorOrigin(FP(char) file, FP(char) func, const int line);
+void _pushErrorOrigin(FP(char) file, FP(char) func, const int line);
 
 const struct ErrorOrigin *popErrorOrigin(void);
 
