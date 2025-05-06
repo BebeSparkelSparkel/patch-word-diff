@@ -62,22 +62,29 @@ int mGetc(struct MFile CP f) {
   return updatePosition(c, f);
 }
 
-char *mGets(char *str, int size, struct MFile CP f) {
-  while (f->ungetI >= 0 && size > 1) {
-    *str++ = f->ungetBuf[f->ungetI--];
+char *mGets(char CP str, const int size, struct MFile CP f) {
+  int i = 0;
+  char *e;
+  while (0 <= f->ungetI && i < size - 1) {
+    int c = f->ungetBuf[f->ungetI--];
+    assert(0 < c);
+    updatePosition(c, f);
+    str[i++] = c;
   }
-  *str = '\0';
-  if (size > 0) {
-    str = fgets(str, size, f->stream);
-    if (NULL == str)
+  str[i] = '\0';
+  if (size - 1 - i > 0) {
+    e = fgets(&str[i], size - i, f->stream);
+    if (NULL == e && ferror(f->stream)) {
+      while (0 < i && mUngetc(str[--i], f) > 0);
       return NULL;
-    while (*str != '\0') {
+    }
+    while ('\0' != str[i]) {
       int r;
-      r = updatePosition(*str++, f);
-      assert(r >= 0);
+      r = updatePosition(str[i++], f);
+      assert(0 <= r);
     }
   }
-  return str;
+  return 0 < i ? str : NULL;
 }
 
 int mUngetc(const int c, struct MFile CP f) {
