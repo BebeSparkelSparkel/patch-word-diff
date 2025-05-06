@@ -146,6 +146,39 @@
 #endif
 
 /*******************************************************************************
+ * Control Flow Helper Macros
+ ******************************************************************************/
+
+/**
+ * Switch case fallthrough annotation
+ * 
+ * Note: This macro explicitly indicates intentional fallthrough in switch 
+ * statements to silence compiler warnings. It provides cross-compiler 
+ * compatibility by selecting the appropriate implementation based on the
+ * compiler and C/C++ standard version.
+ *
+ * Usage: Place at the end of a case block before the next case label:
+ *   case 1:
+ *     doSomething();
+ *     FALLTHROUGH;
+ *   case 2:
+ *     doSomethingElse();
+ */
+#if defined(__cplusplus) && __cplusplus >= 201703L
+  /* C++17 and later - use standard attribute */
+  #define FALLTHROUGH [[fallthrough]]
+#elif defined(__clang__)
+  /* Clang - use clang-specific attribute */
+  #define FALLTHROUGH __attribute__((fallthrough))
+#elif defined(__GNUC__) && (__GNUC__ >= 7)
+  /* GCC 7 and later - use GCC attribute */
+  #define FALLTHROUGH __attribute__((fallthrough))
+#else
+  /* Other compilers - use comment style that GCC recognizes */
+  #define FALLTHROUGH do {} while (0) /* fallthrough */
+#endif
+
+/*******************************************************************************
  * Column and Table Selection
  ******************************************************************************/
 
@@ -267,5 +300,7 @@
  */
 #define EQUIVALENT_DEREF(x) _EQUIVALENT_DEREF_ ## x
 #define _EQUIVALENT_DEREF_0(x, ...) 0 == *(x)
+
+
 
 #endif /* CPP_H */

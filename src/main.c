@@ -12,8 +12,6 @@
 #include "parse.h"
 #include "tmpfile.h"
 
-#define NO_BREAK
-
 #define PARSE_BUF_SIZE BUFSIZ + 2 * MAX(PATH_MAX, INDEX_MAX)
 char parseBuf[PARSE_BUF_SIZE];
 
@@ -95,7 +93,7 @@ int main(const int argc, const char **argv) {
         log(L_GitHeader, logArg.gitHeader = &gh);
         EXPECTED_CONTROL(PC_Minus);
         ps = PS_Diff;
-        NO_BREAK;
+        FALLTHROUGH;
       case PS_Diff:
         log(L_ParseState, logArg.parseState = ps);
         PARSE_DIFF_HEADER;
@@ -110,7 +108,7 @@ int main(const int argc, const char **argv) {
         ERROR_CHECK(tmpFile(&tmp, srcPath, tmpPath, "tmp"));
         EXPECTED_CONTROL(PC_Hunk);
         ps = PS_Hunk;
-        NO_BREAK;
+        FALLTHROUGH;
       case PS_Hunk:
         log(L_ParseState, logArg.parseState = ps);
         PARSE_HUNK_HEADER;
@@ -122,7 +120,7 @@ int main(const int argc, const char **argv) {
         }
         ERROR_CHECK(e);
         ps = PS_Match;
-        NO_BREAK;
+        FALLTHROUGH;
       case PS_Match:
         log(L_ParseState, logArg.parseState = ps);
         e = matchAndCopy(&src, &patch, tmp);
@@ -208,7 +206,7 @@ int main(const int argc, const char **argv) {
         ERROR_CONDITION(RenameFile, rename(tmpPath, srcPath), errorArg.pathsAB = ((struct PathsAB){tmpPath, srcPath}));
 #endif /* _WIN32 */
         ps = PS_End;
-        NO_BREAK;
+        FALLTHROUGH;
       case PS_End:
         log(L_ParseState, logArg.parseState = ps);
         ERROR_CHECK(closeFile(&patch));
