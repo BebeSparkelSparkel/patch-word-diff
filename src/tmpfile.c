@@ -21,7 +21,7 @@ enum ErrorId tmpFile(FILE * CP tmp, const char srcPath[PATH_MAX], char tmpPath[P
   assert(NULL != ext);
   assert(PATH_MAX > strlen(srcPath));
 
-  strncpy(tmpPath, srcPath, PATH_MAX - 1);
+  strncpy(tmpPath, srcPath, PATH_MAX);
   extension = strrchr(tmpPath, '.');
   if (NULL != extension)
     *extension = '_';

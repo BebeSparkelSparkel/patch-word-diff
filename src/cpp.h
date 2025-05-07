@@ -109,7 +109,7 @@
  * _STRNCPY_source_length helper macro for each specific case.
  */
 #define STRNCPY(from, n) _STRNCPY_ ## from ## _ ## n
-#define _STRNCPY_path_PATH_MAX(to, ...) strncpy(to, path, PATH_MAX - 1)
+#define _STRNCPY_path_PATH_MAX(to, ...) strncpy(to, path, PATH_MAX)
 
 /*******************************************************************************
  * Operators and Expression Helpers
