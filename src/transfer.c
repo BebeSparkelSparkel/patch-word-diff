@@ -10,23 +10,28 @@ enum ErrorId advanceToLineCopy(struct MFile CP from, FILE CP to, FP(char) toPath
   int c, r;
   ASSERT_MFILE(from);
   ASSERT_FILE(to);
-  assert(targetLine > 0);
-  assert(from->line <= targetLine);
-  ERROR_CONDITION(CannotFindLineInUpdateFile, from->line > targetLine, errorArg.pathLine = ((struct PathLine){ from->path, targetLine }));
-  while (from->ungetI >= 0 && from->line < targetLine) {
-    c = from->ungetBufBackup[from->ungetI--];
-    if ('\n' == c) ++from->line;
-    r = putc(c, to);
-    EOF_FILE_CHECK(r, to, toPath);
+  if (targetLine != 0) {
+    assert(targetLine > 0);
+    assert(from->line <= targetLine);
+    ERROR_CONDITION(CannotFindLineInUpdateFile, from->line > targetLine, errorArg.pathLine = ((struct PathLine){ from->path, targetLine }));
+    /* optimized version instead of using mGetc */
+    while (from->ungetI >= 0 && from->line < targetLine) {
+      c = from->ungetBufBackup[from->ungetI--];
+      if ('\n' == c) ++from->line;
+      r = putc(c, to);
+      EOF_FILE_CHECK(r, to, toPath);
+    }
+    while (from->line < targetLine) {
+      c = getc(from->stream);
+      EOF_MFILE_CHECK(c, from);
+      if ('\n' == c) ++from->line;
+      r = putc(c, to);
+      EOF_FILE_CHECK(r, to, toPath);
+    }
+    from->column = 1;
+  } else {
+    assert(1 == from->line);
   }
-  while (from->line < targetLine) {
-    c = getc(from->stream);
-    EOF_MFILE_CHECK(c, from);
-    if ('\n' == c) ++from->line;
-    r = putc(c, to);
-    EOF_FILE_CHECK(r, to, toPath);
-  }
-  from->column = 1;
   return Success;
 }
 
