@@ -5,8 +5,6 @@
 #include "transfer.h"
 #include "mfile.h"
 
-// Error in every ERROR with FileError because errorArg.path needs to be set
-
 /* Used for copying the unmodified source until the beginning of the hunk */
 enum ErrorId advanceToLineCopy(struct MFile CP from, FILE CP to, FP(char) toPath, const int targetLine) {
   int c, r;
@@ -124,8 +122,7 @@ enum ErrorId matchAndDiscardUntilClose(struct MFile CP src, struct MFile CP patc
           return Success;
         if (EOF == pc) {
           pc = mUngetc('-', patch);
-          ERROR_CONDITION(FileError, EOF == pc, errorArg.path = patch->path);
-          ERROR_CONDITION(FileError, MF_ERROR_CHECK(patch), errorArg.path = patch->path);
+          ERROR_CONDITION(FileError, EOF == pc || MF_ERROR_CHECK(patch), errorArg.path = patch->path);
           return EOF;
         }
         pc = mUngetc(pc, patch);
