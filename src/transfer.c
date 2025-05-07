@@ -5,6 +5,9 @@
 #include "transfer.h"
 #include "mfile.h"
 
+// Error in every ERROR with FileError because errorArg.path needs to be set
+
+/* Used for copying the unmodified source until the beginning of the hunk */
 enum ErrorId advanceToLineCopy(struct MFile CP from, FILE CP to, const int targetLine) {
   int c, r;
   ASSERT_MFILE(from);
@@ -29,6 +32,7 @@ enum ErrorId advanceToLineCopy(struct MFile CP from, FILE CP to, const int targe
   return Success;
 }
 
+/* Used to copy unmodified source and ensuring it matches the text specified by the patch */
 enum ErrorId matchAndCopy(struct MFile CP src, struct MFile CP patch, FILE CP to) {
   int sc, pc, e;
   ASSERT_MFILE(src);
@@ -81,6 +85,7 @@ enum ErrorId matchAndCopy(struct MFile CP src, struct MFile CP patch, FILE CP to
   ERROR_SET(UndefinedBehavior, errorArg.msg = "matchAndCopy eofHandler did not find EOF");
 }
 
+/* Used to remove text from source as specified by the patch */
 enum ErrorId matchAndDiscardUntilClose(struct MFile CP src, struct MFile CP patch) {
   int sc, pc;
   ASSERT_MFILE(src);
@@ -125,6 +130,7 @@ enum ErrorId matchAndDiscardUntilClose(struct MFile CP src, struct MFile CP patc
   }
 }
 
+/* Used for addtions to the source as specfied by the patch */
 enum ErrorId copyUntilClose(struct MFile CP patch, FILE CP to) {
   int c, r;
   ASSERT_MFILE(patch);
@@ -139,12 +145,10 @@ enum ErrorId copyUntilClose(struct MFile CP patch, FILE CP to) {
       c = mGetc(patch);
       if ('}' == c)
         return Success;
-      if (EOF == c) {
-        r = putc('+', to);
-        ERROR_CONDITION(FileError, EOF == r, mUngetc('+', patch));
+      r = putc('+', to);
+      ERROR_CONDITION(FileError, EOF == r, mUngetc(c, patch); mUngetc('+', patch));
+      if (EOF == c)
         return EOF;
-      }
-      c = '+';
     }
     r = putc(c, to);
     ERROR_CONDITION(FileError, EOF == r, mUngetc(c, patch));
