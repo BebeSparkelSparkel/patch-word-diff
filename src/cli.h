@@ -7,7 +7,7 @@ struct CLIParameters {
   struct MFile CP patch;
   enum LogLevel CP logLevel;
   char CP werror;
-  char * CP tmpPath;
+  char CP tmpPath;
 };
 
 enum ErrorId cli(const int argc, FP(char) CP argv, FP(struct CLIParameters) params);

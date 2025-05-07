@@ -12,7 +12,7 @@ enum ErrorId cli(const int argc, FP(char) CP argv, FP(struct CLIParameters) para
   for(i = 1; i < argc - 1; ++i) {
     s = argv[i];
     if (!strcmp("-tmpPath", s)) {
-      char CP tmpPath = *params->tmpPath,
+      char CP tmpPath = params->tmpPath,
            CP endChar = tmpPath + PATH_MAX - 1;
       ++i;
       ERROR_CONDITION(MissingFollowingCommandArgument, i >= argc, errorArg.optionType.type = "file path"; errorArg.optionType.option = "-tmpPath");

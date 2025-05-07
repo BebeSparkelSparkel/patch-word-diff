@@ -30,6 +30,7 @@ int main(const int argc, FP(char) CP argv) {
         &patch,
         &logLevel,
         &werror,
+        tmpPath,
       };
     ERROR_CHECK(cli(argc, argv, &cliParameters));
   }

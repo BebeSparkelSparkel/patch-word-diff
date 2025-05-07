@@ -21,6 +21,7 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
   static struct DiffHeader dh = {0};
   static struct HunkHeader hh = {0};
   const char *srcPath;
+  const int constTmpPath = tmpPath[0];
 
   while (ps) {
     switch (ps) {
@@ -53,7 +54,11 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
           );
         log(L_SourcePath, logArg.path = srcPath);
         OPEN_READ(src, srcPath);
-        ERROR_CHECK(tmpFile(tmp, srcPath, tmpPath, "tmp"));
+        if (constTmpPath) {
+          *tmp = fopen(tmpPath, "w");
+          ERROR_CONDITION(UnsuccessfulWriteOpen, NULL == *tmp, errorArg.path = tmpPath);
+        } else
+          ERROR_CHECK(tmpFile(tmp, srcPath, tmpPath, "tmp"));
         EXPECTED_CONTROL(PC_Hunk);
         ps = PS_Hunk;
         FALLTHROUGH;
