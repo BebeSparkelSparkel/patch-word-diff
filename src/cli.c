@@ -45,11 +45,14 @@ enum ErrorId cli(const int argc, FP(char) CP argv, FP(struct CLIParameters) para
    * If `-` then stdin is used. */
   if (argc - 1 == i)
     patchPath = argv[i];
-  ERROR_CONDITION(MissingPatchFileCommandArgument, NULL == patchPath, )
-  else if (!strcmp(patchPath, "-"))
-    streamFile(params->patch, stdin, "stdin");
-  else OPEN_READ(params->patch, patchPath);
-  log(L_PatchPath, logArg.path = params->patch->path);
+
+  {
+    ERROR_CONDITION(MissingPatchFileCommandArgument, NULL == patchPath, )
+    else if (!strcmp(patchPath, "-"))
+      streamFile(params->patch, stdin, "stdin");
+    else OPEN_READ(params->patch, patchPath);
+    log(L_PatchPath, logArg.path = params->patch->path);
+  }
 
   return Success;
 }
