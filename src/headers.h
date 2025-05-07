@@ -35,7 +35,7 @@ struct DiffHeader {
 
 #define PARSE_DIFF_HEADER \
   PARSE_LINE(ParseFail_DiffHeader_PathMinus, 1, "--- a/%s\n", "Expected format: `--- a/<path>\\n`", dh.pathMinus); \
-  PARSE_LINE(ParseFail_DiffHeader_PathPlus, 1, "+++ b/%s\n", "Expected format: `--- b/<path>\\n`", dh.pathPlus)
+  PARSE_LINE(ParseFail_DiffHeader_PathPlus, 1, "+++ b/%s\n", "Expected format: `+++ b/<path>\\n`", dh.pathPlus)
 
 /* Hunk Patch Header */
 
