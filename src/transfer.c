@@ -5,8 +5,6 @@
 #include "transfer.h"
 #include "mfile.h"
 
-// Error in every ERROR with FileError because errorArg.path needs to be set
-
 /* Used for copying the unmodified source until the beginning of the hunk */
 enum ErrorId advanceToLineCopy(struct MFile CP from, FILE CP to, const int targetLine) {
   int c, r;
