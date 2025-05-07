@@ -128,12 +128,15 @@ int mUngetc(const int c, struct MFile CP f) {
   assert(EOF != c);
   assert('!' <= c);
   assert('~' >= c);
-  if (0 > f->ungetI) {
-    r = ungetc(c, f->stream);
-    if (EOF == r)
-      return ungetBackup(c, f);
-    --f->column;
-    return r;
+  if (0 <= c) {
+    if (0 > f->ungetI) {
+      r = ungetc(c, f->stream);
+      if (EOF == r)
+        return ungetBackup(c, f);
+      --f->column;
+      return r;
+    }
+    return ungetBackup(c, f);
   }
-  return ungetBackup(c, f);
+  return c;
 }

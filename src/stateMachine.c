@@ -61,7 +61,7 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
         log(L_ParseState, logArg.parseState = ps);
         PARSE_HUNK_HEADER;
         log(L_HunkHeader, logArg.hunkHeader = &hh);
-        e = advanceToLineCopy(src, *tmp, hh.minus.start);
+        e = advanceToLineCopy(src, *tmp, tmpPath, hh.minus.start);
         if (EOF == e) {
           ps = PS_EOF;
           break;
@@ -71,7 +71,7 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
         FALLTHROUGH;
       case PS_Match:
         log(L_ParseState, logArg.parseState = ps);
-        e = matchAndCopy(src, patch, *tmp);
+        e = matchAndCopy(src, patch, *tmp, tmpPath);
         switch (e) {
           case Success:
             pc = parsePatchControl(patch);
@@ -103,7 +103,7 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
         break;
       case PS_Add:
         log(L_ParseState, logArg.parseState = ps);
-        e = copyUntilClose(patch, *tmp);
+        e = copyUntilClose(patch, *tmp, tmpPath);
         if (EOF == e)
           ps = PS_EOF;
         else {
