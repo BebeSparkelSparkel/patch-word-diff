@@ -13,7 +13,7 @@ enum ErrorId advanceToLineCopy(struct MFile CP from, FILE CP to, const int targe
   assert(from->line <= targetLine);
   ERROR_CONDITION(CannotFindLineInUpdateFile, from->line > targetLine, errorArg.pathLine = ((struct PathLine){ from->path, targetLine }));
   while (from->ungetI >= 0 && from->line < targetLine) {
-    c = from->ungetBuf[from->ungetI--];
+    c = from->ungetBufBackup[from->ungetI--];
     if ('\n' == c) ++from->line;
     r = putc(c, to);
     EOF_FILE_CHECK(r, to, "tmpfile");

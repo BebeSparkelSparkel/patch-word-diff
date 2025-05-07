@@ -25,13 +25,13 @@
 
 
 #define MFILE_TABLE(cons, map, ...) \
-  /*                  |  Field  |  Type | Array (Optional) |        OpenInit        |    CloseInit     | */ \
-  cons(map(__VA_ARGS__,   stream, FILE *,                  ,          ASSIGN(STREAM),    VALUE(NULL) ), \
-  cons(map(__VA_ARGS__,     line,    int,                  ,               ASSIGN(1), VALUE(INT_MIN) ), \
-  cons(map(__VA_ARGS__,   column,    int,                  ,               ASSIGN(1), VALUE(INT_MIN) ), \
-  cons(map(__VA_ARGS__,   ungetI,    int,                  ,           ASSIGN_NEG(1), VALUE(INT_MIN) ), \
-  cons(map(__VA_ARGS__, ungetBuf,   char,  [UNGET_BUF_SIZE],                   EMPTY,   VALUE(EMPTY) ), \
-       map(__VA_ARGS__,     path,   char,        [PATH_MAX], STRNCPY(path, PATH_MAX), VALUE_DEREF(0) ) \
+  /*                  |        Field  |  Type | Array (Optional) |        OpenInit        |    CloseInit     | */ \
+  cons(map(__VA_ARGS__,         stream, FILE *,                  ,          ASSIGN(STREAM),    VALUE(NULL) ), \
+  cons(map(__VA_ARGS__,           line,    int,                  ,               ASSIGN(1), VALUE(INT_MIN) ), \
+  cons(map(__VA_ARGS__,         column,    int,                  ,               ASSIGN(1), VALUE(INT_MIN) ), \
+  cons(map(__VA_ARGS__,         ungetI,    int,                  ,           ASSIGN_NEG(1), VALUE(INT_MIN) ), \
+  cons(map(__VA_ARGS__, ungetBufBackup,   char,  [UNGET_BUF_SIZE],                   EMPTY,   VALUE(EMPTY) ), \
+       map(__VA_ARGS__,           path,   char,        [PATH_MAX], STRNCPY(path, PATH_MAX), VALUE_DEREF(0) ) \
       )))))
 
 struct MFile {
