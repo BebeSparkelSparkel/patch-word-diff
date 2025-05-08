@@ -8,7 +8,6 @@
 #include "tmpfile.h"
 #include "transfer.h"
 
-#define PARSE_BUF_SIZE BUFSIZ + 2 * MAX(PATH_MAX, INDEX_MAX)
 char parseBuf[PARSE_BUF_SIZE];
 
 enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP tmp, char *tmpPath) {
@@ -64,7 +63,7 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
         FALLTHROUGH;
       case PS_Hunk:
         log(L_ParseState, logArg.parseState = ps);
-        PARSE_HUNK_HEADER;
+        ERROR_CHECK(parseHunkHeader(patch, &hh));
         log(L_HunkHeader, logArg.hunkHeader = &hh);
         e = advanceToLineCopy(src, *tmp, tmpPath, hh.minus.start);
         if (EOF == e) {
