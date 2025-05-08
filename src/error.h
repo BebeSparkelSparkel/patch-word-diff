@@ -87,6 +87,8 @@
                       , errorArg.optionType.option)), \
   cons(map(__VA_ARGS__, BadPath, , \
            ERROR_PRINT("Bad path\n")), \
+  cons(map(__VA_ARGS__, EmptyPatchFile, , \
+           ERROR_PRINT("Error: Empty patch file: %s\n", errorArg.path)), \
   cons(map(__VA_ARGS__, BadPatchFilePath, , \
            ERROR_PRINT("Bad patch file path: %s\n", errorArg.path)), \
   cons(map(__VA_ARGS__, TmpPathBufferOverflow, , \
@@ -156,7 +158,7 @@
            switch(logId) { LOG_TABLE(CAT, CASE_LOG_ERROR) } ), \
        map(__VA_ARGS__, UnknownError, , \
            ERROR_PRINT("Unknown error\n")) \
-      )))))))))))))))))))))))))))))))
+      ))))))))))))))))))))))))))))))))
 
 #define CASE_LOG_ERROR(_, id, __, format, ...) \
   case id: ERROR_PRINT(format); break;
