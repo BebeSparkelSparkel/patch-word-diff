@@ -17,19 +17,19 @@
   cons(map(__VA_ARGS__, L_None, None, \
            "" ), \
   cons(map(__VA_ARGS__, L_TooVerbose, Warning, \
-           LOG_FORMAT("Logging only supports verbosity of %d but received %d", LOG_MAX, logLevel) ), \
+           LOG_FORMAT("Logging only supports verbosity of %d but received %d\n", LOG_MAX, logLevel) ), \
   cons(map(__VA_ARGS__, L_PatchPath, Verbose, \
-           LOG_FORMAT("Patch Path: %s", logArg.path) ), \
+           LOG_FORMAT("Patch Path: %s\n", logArg.path) ), \
   cons(map(__VA_ARGS__, L_GitHeader, Debug, \
            LOG_FORMAT( FORMAT_GIT_HEADER(*logArg.gitHeader) ) ), \
   cons(map(__VA_ARGS__, L_HunkHeader, Debug, \
            LOG_FORMAT( FORMAT_HUNK_HEADER(*logArg.hunkHeader) ) ), \
   cons(map(__VA_ARGS__, L_SourcePath, Info, \
-           LOG_FORMAT("Patching source file: %s", logArg.path) ), \
+           LOG_FORMAT("Patching source file: %s\n", logArg.path) ), \
   cons(map(__VA_ARGS__, L_ParseState, Debug, \
-           LOG_FORMAT("ParseState: %s", parseState2enumStr(logArg.parseState)) ), \
+           LOG_FORMAT("ParseState: %s\n", parseState2enumStr(logArg.parseState)) ), \
        map(__VA_ARGS__, L_Message, Info, \
-           LOG_FORMAT("%s", logArg.message) ) \
+           LOG_FORMAT("%s\n", logArg.message) ) \
       )))))))
 
 #define LOG_MAX LOG_LEVEL_TABLE(PLUS_INTER, HEAD, 1) - 1
