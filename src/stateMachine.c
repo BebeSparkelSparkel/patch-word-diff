@@ -30,6 +30,9 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
         switch (pc) {
           case PC_Git: ps = PS_Git; break;
           case PC_Minus: ps = PS_Diff; break;
+          case PC_FileError:
+            ERROR_SET(FileError, errorArg.path = patch->path);
+            break;
           default:
             UNEXPECTED_CONTROL(PC_Git, PC_Minus);
             break;
@@ -85,6 +88,9 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
               case PC_Hunk:     ps = PS_Hunk;   break;
               case PC_Git:      ps = PS_Git;    break;
               case PC_EOF:      ps = PS_EOF;    break;
+              case PC_FileError:
+                ERROR_SET(FileError, errorArg.path = patch->path);
+                break;
               case PC_None:
                 ERROR_SET(MissMatch, (errorArg.sourceAndPatch = (struct SourceAndPatch){src, patch}));
                 break;
@@ -136,6 +142,9 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
             case PC_EOF:   ps = PS_FinalizeSource; break;
             case PC_Git:   ps = PS_Git; break;
             case PC_Minus: ps = PS_Diff; break;
+            case PC_FileError:
+              ERROR_SET(FileError, errorArg.path = patch->path);
+              break;
             default: UNEXPECTED_CONTROL(PC_EOF, PC_Git, PC_Minus);
           }
         } else {

@@ -24,9 +24,10 @@ enum PatchControl parsePatchControl(struct MFile CP f) {
   ASSERT_MFILE(f);
   while (notNullCount > 0) {
     c = mGetc(f);
-    if (EOF == c) return PC_EOF;
+    if (EOF == c)
+      return ferror(f->stream) ? PC_FileError : PC_EOF;
     for(i = 0; i < numPrefixes; ++i) {
-      if (ps[i] != NULL) {
+      if (NULL != ps[i]) {
         if (c == *ps[i]) {
           ++ps[i];
           if ('\0' == *ps[i])
@@ -41,7 +42,7 @@ enum PatchControl parsePatchControl(struct MFile CP f) {
   }
   c = mUngetc(c, f);
   if (EOF == c)
-    return PC_EOF;
+    return ferror(f->stream) ? PC_FileError : PC_EOF;
   return PC_None;
 }
 
