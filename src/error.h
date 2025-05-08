@@ -129,15 +129,15 @@
                        errorArg.patchControlDiffers.f->line, \
                        errorArg.patchControlDiffers.f->column - (int)strlen(patchControl2commandStr(errorArg.patchControlDiffers.received))) ), \
   cons(map(__VA_ARGS__, ParseFail_GitHeader, , \
-           ERROR_PRINT("Failed to parse Git header: %s (line %d in %s)\n", errorArg.pathLineMsg.msg, errorArg.pathLineMsg.line, errorArg.pathLineMsg.path)), \
+           ERROR_PRINT("Failed to parse Git header: " PathLineMsg_FORMAT)), \
   cons(map(__VA_ARGS__, ParseFail_GitHeader_Index, , \
-           ERROR_PRINT("Failed to parse Git header index: %s (line %d in %s)\n", errorArg.pathLineMsg.msg, errorArg.pathLineMsg.line, errorArg.pathLineMsg.path)), \
+           ERROR_PRINT("Failed to parse Git header index: " PathLineMsg_FORMAT)), \
   cons(map(__VA_ARGS__, ParseFail_DiffHeader_PathMinus, , \
-           ERROR_PRINT("Failed to parse Diff header path (minus): %s (line %d in %s)\n", errorArg.pathLineMsg.msg, errorArg.pathLineMsg.line, errorArg.pathLineMsg.path)), \
+           ERROR_PRINT("Failed to parse Diff header path (minus): " PathLineMsg_FORMAT)), \
   cons(map(__VA_ARGS__, ParseFail_DiffHeader_PathPlus, , \
-           ERROR_PRINT("Failed to parse Diff header path (plus): %s (line %d in %s)\n", errorArg.pathLineMsg.msg, errorArg.pathLineMsg.line, errorArg.pathLineMsg.path)), \
+           ERROR_PRINT("Failed to parse Diff header path (plus): " PathLineMsg_FORMAT)), \
   cons(map(__VA_ARGS__, ParseFail_HunkHeader, , \
-           ERROR_PRINT("Failed to parse hunk header: %s (line %d in %s)\n", errorArg.pathLineMsg.msg, errorArg.pathLineMsg.line, errorArg.pathLineMsg.path)), \
+           ERROR_PRINT("Failed to parse hunk header: " PathLineMsg_FORMAT)), \
   cons(map(__VA_ARGS__, ParseFail_InvalidControlInState, , \
            ERROR_PRINT("Found invalid parse control %s \"%s\" in state %s (line %d column %d in %s)\n", \
                        patchControl2enumStr(errorArg.stateControl.control), \
@@ -180,8 +180,11 @@ struct PathLine {
 struct PathLineMsg {
   const char *path;
   int line;
-  const char *msg;
+  const char *msg,
+             *lineString;
 };
+#define PathLineMsg_FORMAT \
+  "%s (line %d in %s) when parsing line \"%s\"\n", errorArg.pathLineMsg.msg, errorArg.pathLineMsg.line, errorArg.pathLineMsg.path, errorArg.pathLineMsg.lineString
 
 struct StateControl {
   struct MFile *f;

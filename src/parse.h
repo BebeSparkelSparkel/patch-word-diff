@@ -28,6 +28,6 @@ extern char parseBuf[PARSE_BUF_SIZE];
   ERROR_CONDITION(ParseFail_BufferOverflow, '\0' != s[PARSE_BUF_SIZE - 2], errorArg.pathLine = ((struct PathLine){ patch->path, patch->line - 1 }))
 
 #define PLM(f, msg) \
-  errorArg.pathLineMsg = ((struct PathLineMsg){ f->path, f->line - 1, msg })
+  errorArg.pathLineMsg = ((struct PathLineMsg){ f->path, f->line - 1, msg, s })
 
 #endif
