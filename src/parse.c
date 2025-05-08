@@ -6,26 +6,31 @@
 
 enum ErrorId parseHunkHeader(struct MFile CP patch, struct HunkHeader CP hh) {
   const char *s;
+  const char *format;
   int i;
   LOAD_PARSE_LINE(ParseFail_HunkHeader);
-  i = sscanf(parseBuf, "@@ -%d,%d +%d,%d @@", &hh->minus.start, &hh->minus.end, &hh->plus.start, &hh->plus.end);
+  format = "@@ -%d,%d +%d,%d @@";
+  i = sscanf(parseBuf, format, &hh->minus.start, &hh->minus.end, &hh->plus.start, &hh->plus.end);
   if (4 == i)
-    return Success;
-  i = sscanf(parseBuf, "@@ -%d +%d @@", &hh->minus.start, &hh->plus.start);
+    goto success;
+  format = "@@ -%d +%d @@";
+  i = sscanf(parseBuf, format, &hh->minus.start, &hh->plus.start);
   if (2 == i) {
     hh->minus.end = 0 == hh->minus.start ? 0 : 1;
     hh->plus.end = 1;
-    return Success;
+    goto success;
   }
-  i = sscanf(parseBuf, "@@ -%d,%d +%d @@", &hh->minus.start, &hh->minus.end, &hh->plus.start);
+  format = "@@ -%d,%d +%d @@";
+  i = sscanf(parseBuf, format, &hh->minus.start, &hh->minus.end, &hh->plus.start);
   if (3 == i) {
     hh->plus.end = 1;
-    return Success;
+    goto success;
   }
-  i = sscanf(parseBuf, "@@ -%d +%d,%d @@", &hh->minus.start, &hh->plus.start, &hh->plus.end);
+  format = "@@ -%d +%d,%d @@";
+  i = sscanf(parseBuf, format, &hh->minus.start, &hh->plus.start, &hh->plus.end);
   if (3 == i) {
     hh->minus.end = 1;
-    return Success;
+    goto success;
   }
   ERROR_SET(ParseFail_HunkHeader, 
          errorArg.pathLineMsg = ((struct PathLineMsg){ 
@@ -39,4 +44,7 @@ enum ErrorId parseHunkHeader(struct MFile CP patch, struct HunkHeader CP hh) {
            "  @@ -a +c,d @@      (mixed format)\n"
            "Context text after @@ is allowed in any format."
          }));
+success:
+  /* log(L_ParseSuccess, logArg.pathLineMsg = ((struct PathLineMsg){ patch->path, patch->line - 1, format })); */
+  return Success;
 }
