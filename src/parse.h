@@ -8,8 +8,8 @@
   PARSE_LINE(ParseFail_GitHeader_Index, 3, "index %[0-9a-f]..%[0-9a-f] %d\n", "Expected format: `index <indexA>..<indexB> <mode>\\n`", gh.indexA, gh.indexB, &gh.mode)
 
 #define PARSE_DIFF_HEADER \
-  PARSE_LINE(ParseFail_DiffHeader_PathMinus, 1, "--- a/%s\n", "Expected format: `--- a/<path>\\n`", dh.pathMinus); \
-  PARSE_LINE(ParseFail_DiffHeader_PathPlus, 1, "+++ b/%s\n", "Expected format: `+++ b/<path>\\n`", dh.pathPlus)
+  PARSE_LINE(ParseFail_DiffHeader_PathMinus, 1, /* "--- " is consumed by parsePatchControl */ "a/%s\n", "Expected format: `--- a/<path>\\n`", dh.pathMinus); \
+  PARSE_LINE(ParseFail_DiffHeader_PathPlus, 1,                                                "+++ b/%s\n", "Expected format: `+++ b/<path>\\n`", dh.pathPlus)
 
 enum ErrorId parseHunkHeader(struct MFile CP patch, struct HunkHeader CP hh);
 
