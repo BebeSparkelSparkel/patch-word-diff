@@ -21,7 +21,7 @@ void streamFile(struct MFile CP f, FILE *stream, FP(char) path) {
 #undef STREAM
 }
 
-static void markClosed(struct MFile CP f) {
+void initMFile(struct MFile CP f) {
 #define VALUE ASSIGN
 #define VALUE_DEREF ASSIGN_DEREF
   MFILE_TABLE(END_EXPRESSION_INTER, COMPOSE3, EXPAND_ARG(APPLY), EXPAND_ARG(SECOND(DREF_FROM(f))), SELECT_COLUMNS(MFILE_TABLE, CloseInit, Field));
@@ -32,7 +32,7 @@ static void markClosed(struct MFile CP f) {
 enum ErrorId closeFile(struct MFile CP f) {
   ASSERT_MFILE(f);
   ERROR_CONDITION(UnsuccessfulFileClose, fclose(f->stream), errorArg.path = f->path);
-  markClosed(f);
+  initMFile(f);
   return Success;
 }
 

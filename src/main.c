@@ -20,10 +20,13 @@ char werror = 0;
 #include "error.h"
 
 int main(const int argc, FP(char) CP argv) {
-  struct MFile src = {0},
-               patch = {0};
+  struct MFile src,
+               patch;
   char tmpPath[PATH_MAX] = {'\0'};
   FILE *tmp = NULL;
+
+  initMFile(&src);
+  initMFile(&patch);
 
   {
     const struct CLIParameters cliParameters = {

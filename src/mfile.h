@@ -49,6 +49,8 @@ struct MFile {
   assert(!ferror(f)); \
   assert(!feof(f))
 
+void initMFile(struct MFile CP f);
+
 void streamFile(struct MFile CP f, FILE *stream, FP(char) path);
 
 #define OPEN_READ(f, path) OPEN_MODE(f, path, "r")
