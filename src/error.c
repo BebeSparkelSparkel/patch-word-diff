@@ -37,7 +37,6 @@ void _pushErrorOrigin(FP(char) file, FP(char) func, const int line) {
 
 const struct ErrorOrigin *popErrorOrigin(void) {
   static int end = -1;
-  assert(count >= 0);
   if (end == -1)
     end = MAX(0, count - TRACE_SIZE + 1);
   if (count < end)

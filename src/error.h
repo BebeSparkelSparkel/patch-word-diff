@@ -7,15 +7,22 @@
  */
 #undef ERROR_CHECK
 #define ERROR_CHECK(e) \
-  error((e), &src, &patch, tmp)
+  if (Success != (e)) { \
+    SET_ORIGIN; \
+    error(e, &src, &patch, tmp); \
+  }
 
 #undef ERROR_SET
 #define ERROR_SET(e, argAssignments) \
-  argAssignments; ERROR_CHECK(e)
+  SET_ORIGIN; \
+  argAssignments; \
+  ERROR_CHECK(e)
 
 #undef ERROR_CONDITION
 #define ERROR_CONDITION(e, condition, argAssignments) \
-  if (condition) { ERROR_SET(e, argAssignments); }
+  if (condition) { \
+    ERROR_SET(e, argAssignments); \
+  }
 
 #else
 /**
@@ -24,12 +31,16 @@
  */
 #undef ERROR_CHECK
 #define ERROR_CHECK(e) \
-  if (Success != (e)) \
-    return (e)
+  if (Success != (e)) { \
+    SET_ORIGIN; \
+    return e; \
+  }
 
 #undef ERROR_SET
 #define ERROR_SET(e, argAssignments) \
-  argAssignments; return(e)
+  SET_ORIGIN; \
+  argAssignments; \
+  return e
 
 #undef ERROR_CONDITION
 #define ERROR_CONDITION(e, condition, argAssignments) \
@@ -236,12 +247,7 @@ union ErrorArg {
 
 extern union ErrorArg errorArg;
 
-
-#define SET_ORIGIN_EOF(value) SET_ORIGIN_CONDITIONALLY(value, EQUIVALENT(EOF))
-#define SET_ORIGIN_NE0(value) SET_ORIGIN_CONDITIONALLY(value, !EQUIVALENT(0))
-#define SET_ORIGIN_CONDITIONALLY(value, condition) if (condition(value)) { SET_ORIGIN }
 #define SET_ORIGIN _pushErrorOrigin(__FILE__, __func__, __LINE__)
-
 struct ErrorOrigin {
   const char *path,
              *function;
