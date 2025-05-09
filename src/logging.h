@@ -61,7 +61,7 @@ enum LogLevel logIdLevel(enum LogId x);
   if (condition) { \
     argAssignments; \
     ERROR_CONDITION(WarningAsError, werror && logIdLevel(id) == LogWarning, ) \
-    else if (logIdLevel(id) >= logLevel) \
+    else if (logIdLevel(id) <= logLevel) \
       _log(id); \
   }
 
