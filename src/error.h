@@ -129,6 +129,9 @@
            ERROR_PRINT("Cannot find line %d in update file %s\n", errorArg.pathLine.line, errorArg.pathLine.path)), \
   cons(map(__VA_ARGS__, ParseFail_BufferOverflow, , \
            ERROR_PRINT("Buffer overflow at line %d in file %s\n", errorArg.pathLine.line, errorArg.pathLine.path)), \
+  cons(map(__VA_ARGS__, ParseFail_UnexpectedEOF, , \
+           ERROR_PRINT("Unexpected EOF %s: in file %s at line %d and column %d\n", \
+                       errorArg.mfileMsg.msg, errorArg.mfileMsg.f->path, errorArg.mfileMsg.f->line, errorArg.mfileMsg.f->column)), \
   cons(map(__VA_ARGS__, ParseFail_UnexpectedControl, , \
            ERROR_PRINT("Expected one of %s but received %s `%s` in patch file %s line %d column %d\n", \
                        errorArg.unexpectedPatchControl.expected, \
@@ -176,7 +179,7 @@
            switch(logId) { LOG_TABLE(CAT, CASE_LOG_ERROR) } ), \
        map(__VA_ARGS__, UnknownError, , \
            ERROR_PRINT("Unknown error\n")) \
-      ))))))))))))))))))))))))))))))))
+      )))))))))))))))))))))))))))))))))
 
 #define CASE_LOG_ERROR(_, id, __, format, ...) \
   case id: ERROR_PRINT(format); break;
@@ -250,6 +253,10 @@ union ErrorArg {
   struct SourceAndPatch sourceAndPatch;
   struct OptionType optionType;
   enum LogId logId;
+  struct MFileMsg {
+    const struct MFile *f;
+    const char *msg;
+  } mfileMsg;
 };
 
 extern union ErrorArg errorArg;

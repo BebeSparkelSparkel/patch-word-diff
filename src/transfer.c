@@ -104,19 +104,19 @@ enum ErrorId matchAndDiscardUntilClose(struct MFile CP src, struct MFile CP patc
     if (EOF == sc && EOF == pc) {
       ERROR_CONDITION(FileError, MF_ERROR_CHECK(src), errorArg.path = src->path);
       ERROR_CONDITION(FileError, MF_ERROR_CHECK(patch), errorArg.path = patch->path);
-      return EOF;
+      ERROR_SET(ParseFail_UnexpectedEOF, errorArg.mfileMsg = ((struct MFileMsg){patch, "Unclosed remove marker `-]`"}));
     }
     if (EOF == sc) {
       pc = mUngetc(pc, patch);
       ERROR_CONDITION(FileError, EOF == pc, errorArg.path = patch->path);
       ERROR_CONDITION(FileError, MF_ERROR_CHECK(src), errorArg.path = src->path);
-      return EOF;
+      ERROR_SET(ParseFail_UnexpectedEOF, errorArg.mfileMsg = ((struct MFileMsg){src, "Patch has more to remove from"}));
     }
     if (EOF == pc) {
       sc = mUngetc(sc, src);
       ERROR_CONDITION(FileError, EOF == sc, errorArg.path = src->path);
       ERROR_CONDITION(FileError, MF_ERROR_CHECK(patch), errorArg.path = patch->path);
-      return EOF;
+      ERROR_SET(ParseFail_UnexpectedEOF, errorArg.mfileMsg = ((struct MFileMsg){patch, "Unclosed remove marker `-]`"}));
     }
     if (sc != pc) {
       sc = mUngetc(sc, src);
@@ -128,7 +128,7 @@ enum ErrorId matchAndDiscardUntilClose(struct MFile CP src, struct MFile CP patc
         if (EOF == pc) {
           pc = mUngetc('-', patch);
           ERROR_CONDITION(FileError, EOF == pc || MF_ERROR_CHECK(patch), errorArg.path = patch->path);
-          return EOF;
+          ERROR_SET(ParseFail_UnexpectedEOF, errorArg.mfileMsg = ((struct MFileMsg){patch, "Unclosed remove marker `]` after '-'"}));
         }
         pc = mUngetc(pc, patch);
         ERROR_CONDITION(FileError, EOF == pc, errorArg.path = patch->path);
@@ -150,7 +150,7 @@ enum ErrorId copyUntilClose(struct MFile CP patch, FILE CP to, FP(char) toPath) 
     c = mGetc(patch);
     if (EOF == c) {
       ERROR_CONDITION(FileError, MF_ERROR_CHECK(patch), errorArg.path = patch->path);
-      return EOF;
+      ERROR_SET(ParseFail_UnexpectedEOF, errorArg.mfileMsg = ((struct MFileMsg){patch, "Unclosed append marker `+}`"}));
     }
     if ('+' == c) {
       c = mGetc(patch);
@@ -158,8 +158,7 @@ enum ErrorId copyUntilClose(struct MFile CP patch, FILE CP to, FP(char) toPath) 
         return Success;
       r = putc('+', to);
       ERROR_CONDITION(FileError, EOF == r, errorArg.path = toPath; mUngetc(c, patch); mUngetc('+', patch));
-      if (EOF == c)
-        return EOF;
+      ERROR_CONDITION(ParseFail_UnexpectedEOF, EOF == c, errorArg.mfileMsg = ((struct MFileMsg){patch, "Unclosed append marker `}` after '+'"}));
     }
     r = putc(c, to);
     ERROR_CONDITION(FileError, EOF == r, errorArg.path = toPath; mUngetc(c, patch));

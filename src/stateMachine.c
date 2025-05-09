@@ -114,26 +114,21 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
             break;
         }
         break;
-      case PS_Add:
-        log(L_ParseState, logArg.parseState = ps);
-        e = copyUntilClose(patch, *tmp, tmpPath);
-        if (EOF == e)
-          ps = PS_EOF;
-        else {
-          ERROR_CHECK(e);
-          ps = PS_Match;
-        }
-        break;
       case PS_Remove:
         log(L_ParseState, logArg.parseState = ps);
-        e = matchAndDiscardUntilClose(src, patch);
-        if (EOF == e)
-          ps = PS_EOF;
-        else {
-          ERROR_CHECK(e);
-          ps = PS_Match;
-        }
-       break;
+        ERROR_CHECK(matchAndDiscardUntilClose(src, patch));
+        ps = PS_Match;
+        break;
+      case PS_Add:
+        log(L_ParseState, logArg.parseState = ps);
+        ERROR_CHECK(copyUntilClose(patch, *tmp, tmpPath));
+        ps = PS_Match;
+        break;
+      case PS_Append:
+        log(L_ParseState, logArg.parseState = ps);
+        ERROR_CHECK(copyUntilClose(patch, *tmp, tmpPath));
+        ps = PS_EOF;
+        FALLTHROUGH;
       case PS_EOF:
         log(L_ParseState, logArg.parseState = ps);
         if (EOF == pc) {
@@ -142,9 +137,10 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
         } else if (feof(src->stream)) {
           pc = parsePatchControl(patch);
           switch (pc) {
-            case PC_EOF:   ps = PS_FinalizeSource; break;
-            case PC_Git:   ps = PS_Git; break;
-            case PC_Minus: ps = PS_Diff; break;
+            case PC_EOF:      ps = PS_FinalizeSource; break;
+            case PC_Git:      ps = PS_Git;            break;
+            case PC_Minus:    ps = PS_Diff;           break;
+            case PC_AddStart: ps = PS_Append;         break;
             case PC_FileError:
               ERROR_SET(FileError, errorArg.path = patch->path);
               break;

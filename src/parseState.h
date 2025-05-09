@@ -13,9 +13,10 @@
   cons(map(__VA_ARGS__, PS_Match,             ), \
   cons(map(__VA_ARGS__, PS_Remove,            ), \
   cons(map(__VA_ARGS__, PS_Add,               ), \
+  cons(map(__VA_ARGS__, PS_Append,            ), \
   cons(map(__VA_ARGS__, PS_FinalizeSource,    ), \
        map(__VA_ARGS__, PS_EOF,               ) \
-      ))))))))))
+      )))))))))))
 
 enum ParseState {
   PARSE_STATE_TABLE(COMMA_INTER, COMPOSE, IDENTITY, CAT)
