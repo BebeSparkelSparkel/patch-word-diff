@@ -24,6 +24,7 @@ int main(const int argc, FP(char) CP argv) {
                patch;
   char tmpPath[PATH_MAX] = {'\0'};
   FILE *tmp = NULL;
+  enum ErrorId e;
 
   initMFile(&src);
   initMFile(&patch);

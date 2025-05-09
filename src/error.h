@@ -6,22 +6,23 @@
  * These process errors since main cannot return them.
  */
 #undef ERROR_CHECK
-#define ERROR_CHECK(e) \
-  if (Success != (e)) { \
+#define ERROR_CHECK(E) \
+  e = E; \
+  if (Success != e) { \
     SET_ORIGIN; \
     error(e, &src, &patch, tmp); \
   }
 
 #undef ERROR_SET
-#define ERROR_SET(e, argAssignments) \
+#define ERROR_SET(E, argAssignments) \
   SET_ORIGIN; \
   argAssignments; \
-  ERROR_CHECK(e)
+  ERROR_CHECK(E)
 
 #undef ERROR_CONDITION
-#define ERROR_CONDITION(e, condition, argAssignments) \
+#define ERROR_CONDITION(E, condition, argAssignments) \
   if (condition) { \
-    ERROR_SET(e, argAssignments); \
+    ERROR_SET(E, argAssignments); \
   }
 
 #else
@@ -30,23 +31,24 @@
  * These propagate errors up the call stack.
  */
 #undef ERROR_CHECK
-#define ERROR_CHECK(e) \
-  if (Success != (e)) { \
+#define ERROR_CHECK(E) \
+  e = E; \
+  if (Success != e) { \
     SET_ORIGIN; \
     return e; \
   }
 
 #undef ERROR_SET
-#define ERROR_SET(e, argAssignments) \
+#define ERROR_SET(E, argAssignments) \
   SET_ORIGIN; \
   argAssignments; \
-  return e
+  return E
 
 #undef ERROR_CONDITION
-#define ERROR_CONDITION(e, condition, argAssignments) \
+#define ERROR_CONDITION(E, condition, argAssignments) \
   if (condition) { \
     SET_ORIGIN; \
-    ERROR_SET(e, argAssignments); \
+    ERROR_SET(E, argAssignments); \
   }
 
 #endif /* IN_MAIN_FUNCTION */
@@ -62,6 +64,7 @@
 #include "logging.h"
 
 #define ERROR_PRINT(...) \
+  assert(count >= 0); \
   if (LogWarning >= logLevel) \
     fprintf(stderr, "ERROR: " __VA_ARGS__); \
   else { \
@@ -87,7 +90,9 @@
   cons(map(__VA_ARGS__, eof,  = EOF, \
            ERROR_PRINT("Unexpected EOF\n")), \
   cons(map(__VA_ARGS__, Success,  = 0, \
-           return), \
+           assert(NULL != "error should not be called with Success"); \
+           errorArg.msg = "error handler called with Success"; \
+           goto undefinedBehavior; ), \
   cons(map(__VA_ARGS__, UndefinedFlag, , \
            ERROR_PRINT("Undefined flag '%c' in argument %s\n", errorArg.undefinedFlag.c, errorArg.undefinedFlag.argString)), \
   cons(map(__VA_ARGS__, MissingPatchFileCommandArgument, , \
@@ -164,7 +169,7 @@
                         errorArg.sourceAndPatch.src->line, errorArg.sourceAndPatch.src->column, errorArg.sourceAndPatch.src->path, \
                         errorArg.sourceAndPatch.patch->line, errorArg.sourceAndPatch.patch->column, errorArg.sourceAndPatch.patch->path)), \
   cons(map(__VA_ARGS__, UndefinedBehavior, , \
-           ERROR_PRINT("Undefined behavior of %s\n", errorArg.msg)), \
+           undefinedBehavior: ERROR_PRINT("Undefined behavior of %s\n", errorArg.msg)), \
   cons(map(__VA_ARGS__, WarningAsError, , \
            switch(logId) { LOG_TABLE(CAT, CASE_LOG_ERROR) } ), \
        map(__VA_ARGS__, UnknownError, , \
