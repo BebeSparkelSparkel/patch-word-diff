@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ctype.h>
 
 #include "mfile.h"
 #include "patchControl.h"
@@ -22,8 +23,10 @@ enum PatchControl parsePatchControl(struct MFile CP f) {
       c;
   const char *ps[] = { PATCH_CONTROL_TABLE(TAIL, COMMA_INTER, THIRD, ) };
   ASSERT_MFILE(f);
-  while (notNullCount > 0) {
+  do
     c = mGetc(f);
+  while (isspace(c));
+  do {
     if (EOF == c)
       return ferror(f->stream) ? PC_FileError : PC_EOF;
     for(i = 0; i < numPrefixes; ++i) {
@@ -39,7 +42,8 @@ enum PatchControl parsePatchControl(struct MFile CP f) {
         }
       }
     }
-  }
+    c = mGetc(f);
+  } while (notNullCount > 0);
   c = mUngetc(c, f);
   if (EOF == c)
     return ferror(f->stream) ? PC_FileError : PC_EOF;
