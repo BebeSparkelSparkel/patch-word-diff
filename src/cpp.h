@@ -135,7 +135,7 @@
  * CASE_RETURN_STRINGIFIED converts an enum value to its string representation.
  * CASE_RETURN provides a shorthand for returning a specific value for a case.
  */
-#define CASE_RETURN_STRINGIFIED(x) case x: return #x
+#define CASE_RETURN_STRINGIFIED(x) case x: return STRINGIFY(x)
 #define CASE_RETURN(x, y, ...) case x: return y
 
 /**

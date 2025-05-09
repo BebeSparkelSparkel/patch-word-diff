@@ -32,7 +32,7 @@ test:
 $(TEST_DIRS):
 	@echo "Running test: $(YELLOW)$@$(RESET)"
 	@cp $@/source.txt $@/inplace.txt
-	@cd $@; $(PATCHW) ./patch.txt || (echo "$(RED)Failed$(RESET): patchw returned error code $?"; exit 1)
+	@cd $@; $(PATCHW) $(PATCHW_ARGS) ./patch.txt || (echo "$(RED)Failed$(RESET): patchw returned error code $?"; exit 1)
 	@if diff -q $@/inplace.txt $@/result.txt > /dev/null; then \
 		echo "$(GREEN)Passed$(RESET)"; \
 	else \
