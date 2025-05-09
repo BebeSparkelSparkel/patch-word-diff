@@ -14,6 +14,10 @@
 static struct ErrorOrigin errorOrigin[TRACE_SIZE];
 static int count = -1;
 
+static int traceBufferOverflowed(void) {
+  return count >= TRACE_SIZE;
+}
+
 #define CASE_ERROR(_, e, __, action) \
   case e: action; break;
 
@@ -32,6 +36,7 @@ void error(enum ErrorId e, struct MFile CP src, struct MFile CP patch, FILE CP t
 }
 
 void _pushErrorOrigin(FP(char) file, FP(char) func, const int line) {
+  assert(count >= -1 && "_pushErrorOrigin should not be called after popErrorOrigin");
   errorOrigin[++count % TRACE_SIZE] = (struct ErrorOrigin){ file, func, line };
 }
 
@@ -39,7 +44,9 @@ const struct ErrorOrigin *popErrorOrigin(void) {
   static int end = -1;
   if (end == -1)
     end = MAX(0, count - TRACE_SIZE + 1);
-  if (count < end)
+  if (count < end) {
+    count = INT_MIN;  /* Invalidate for future _pushErrorOrigin calls */
     return NULL;
-  return &errorOrigin[count-- % TRACE_SIZE];
+  }
+  return &errorOrigin[end++ % TRACE_SIZE];
 }

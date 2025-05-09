@@ -69,6 +69,8 @@
     fprintf(stderr, "ERROR: " __VA_ARGS__); \
   else { \
     const struct ErrorOrigin *origin; \
+    if (traceBufferOverflowed()) \
+      fputs("WARNING: errorOrigin buffer overflow - not all traces are listed\n", stderr); \
     origin = popErrorOrigin(); \
     assert(NULL != origin); \
     fprintf(stderr, "ERROR [at %s:%d in %s]: ", \
