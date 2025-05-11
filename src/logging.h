@@ -13,6 +13,8 @@
        map(__VA_ARGS__, Debug,      ) \
       ))))
 
+#define DBUG_PREFIX "DBUG: "
+
 #define LOG_TABLE(cons, map, ...) \
   cons(map(__VA_ARGS__, L_None, None, \
            "" ), \
@@ -21,16 +23,18 @@
   cons(map(__VA_ARGS__, L_PatchPath, Verbose, \
            LOG_FORMAT("Patch Path: %s\n", logArg.path) ), \
   cons(map(__VA_ARGS__, L_GitHeader, Debug, \
-           LOG_FORMAT( FORMAT_GIT_HEADER(*logArg.gitHeader) ) ), \
+           LOG_FORMAT(FORMAT_GIT_HEADER(*logArg.gitHeader, DBUG_PREFIX)) ), \
+  cons(map(__VA_ARGS__, L_DiffHeader, Debug, \
+           LOG_FORMAT(FORMAT_DIFF_HEADER(*logArg.diffHeader, DBUG_PREFIX)) ), \
   cons(map(__VA_ARGS__, L_HunkHeader, Debug, \
-           LOG_FORMAT( FORMAT_HUNK_HEADER(*logArg.hunkHeader) ) ), \
+           LOG_FORMAT(FORMAT_HUNK_HEADER(*logArg.hunkHeader)) ), \
   cons(map(__VA_ARGS__, L_SourcePath, Info, \
            LOG_FORMAT("Patching source file: %s\n", logArg.path) ), \
   cons(map(__VA_ARGS__, L_ParseState, Debug, \
            LOG_FORMAT("ParseState: %s\n", parseState2enumStr(logArg.parseState)) ), \
        map(__VA_ARGS__, L_Message, Info, \
            LOG_FORMAT("%s\n", logArg.message) ) \
-      )))))))
+      ))))))))
 
 #define LOG_MAX LOG_LEVEL_TABLE(PLUS_INTER, HEAD, 1) - 1
 

@@ -53,6 +53,7 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
       case PS_Diff:
         log(L_ParseState, logArg.parseState = ps);
         PARSE_DIFF_HEADER;
+        log(L_DiffHeader, logArg.diffHeader = &dh);
         srcPath = dh.pathMinus;
         ERROR_CONDITION(
           DifferingSourceUpdatePaths,
