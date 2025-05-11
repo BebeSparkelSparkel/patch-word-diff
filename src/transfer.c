@@ -51,6 +51,7 @@ enum ErrorId matchAndCopy(struct MFile CP src, struct MFile CP patch, FILE CP to
         do {
           e = putc(sc, to);
           ERROR_CONDITION(FileError, EOF == e, errorArg.path = toPath; mUngetc(sc, src));
+          lastWrittenChar = sc;
           sc = mGetc(src);
         } while(isspace(sc));
         ERROR_CONDITION(FileError, EOF == sc && MF_ERROR_CHECK(src), errorArg.path = src->path);
@@ -70,6 +71,7 @@ enum ErrorId matchAndCopy(struct MFile CP src, struct MFile CP patch, FILE CP to
     }
     e = putc(sc, to);
     ERROR_CONDITION(FileError, EOF == e, errorArg.path = toPath; mUngetc(sc, src));
+    lastWrittenChar = sc;
   }
   ERROR_SET(UndefinedBehavior, errorArg.msg = "matchAndCopy loop unexpectedly exited");
   eofHandler:
@@ -158,18 +160,20 @@ enum ErrorId copyUntilClose(struct MFile CP patch, FILE CP to, FP(char) toPath) 
         return Success;
       r = putc('+', to);
       ERROR_CONDITION(FileError, EOF == r, errorArg.path = toPath; mUngetc(c, patch); mUngetc('+', patch));
+      lastWrittenChar = '+';
       ERROR_CONDITION(ParseFail_UnexpectedEOF, EOF == c, errorArg.mfileMsg = ((struct MFileMsg){patch, "Unclosed append marker `}` after '+'"}));
     }
     r = putc(c, to);
     ERROR_CONDITION(FileError, EOF == r, errorArg.path = toPath; mUngetc(c, patch));
+    lastWrittenChar = c;
   }
 }
 
 enum ErrorId copyRest(struct MFile CP from, FILE CP to, FP(char) toPath) {
-  ASSERT_MFILE(from);
-  ASSERT_FILE(to);
   int src_fd, to_fd, e;
   long src_pos;
+  ASSERT_MFILE(from);
+  ASSERT_FILE(to);
   if ( (src_fd = fileno(from->stream)) != -1
     && (to_fd = fileno(to)) != -1
     && (src_pos = ftell(from->stream)) != -1
@@ -185,6 +189,7 @@ enum ErrorId copyRest(struct MFile CP from, FILE CP to, FP(char) toPath) {
       if (r > 0) {
         w = write(to_fd, parseBuf, r);
         ERROR_CONDITION(FileError, (size_t)w != r, errorArg.path = toPath);
+        lastWrittenChar = parseBuf[w-1];
       }
     } while (r == BUFSIZ);
     ERROR_CONDITION(FileError, r == (size_t)-1 || MF_ERROR_CHECK(from), errorArg.path = from->path);
@@ -196,12 +201,11 @@ enum ErrorId copyRest(struct MFile CP from, FILE CP to, FP(char) toPath) {
       r = fread(parseBuf, sizeof(char), BUFSIZ, from->stream);
       w = fwrite(parseBuf, sizeof(char), r, to);
       ERROR_CONDITION(FileError, r != w, errorArg.path = from->path);
+      lastWrittenChar = parseBuf[w-1];
     } while (BUFSIZ == r);
     ERROR_CONDITION(FileError, MF_ERROR_CHECK(from), errorArg.path = from->path);
     ERROR_CONDITION(FileError, ferror(to), errorArg.path = toPath);
   }
-  ERROR_CHECK(closeFile(from));
-  ERROR_CONDITION(UnsuccessfulFileClose, fclose(to), errorArg.path = toPath);
   return Success;
 }
 

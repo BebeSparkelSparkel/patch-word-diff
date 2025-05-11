@@ -38,12 +38,22 @@ struct MFile {
   MFILE_TABLE(END_EXPRESSION_INTER, COMPOSE, EXPAND_ARG(CAT3), FLIP);
 };
 
+#define ASSERT_MFILE_EOF(f) \
+  assert(f != NULL); \
+  assert(f->stream != NULL); \
+  assert(!ferror(f->stream)); \
+ _ASSERT_MFILE_INDICIES(f)
+
 #define ASSERT_MFILE(f) \
   assert(f != NULL); \
   ASSERT_FILE(f->stream); \
+ _ASSERT_MFILE_INDICIES(f)
+
+#define _ASSERT_MFILE_INDICIES(f) \
   assert(f->line > 0); \
   assert(f->column > 0); \
   assert(f->ungetI >= -1)
+
 #define ASSERT_FILE(f) \
   assert(f != NULL); \
   assert(!ferror(f)); \
@@ -74,6 +84,7 @@ enum ErrorId closeFile(struct MFile CP f);
 
 int isClosed(FP(struct MFile) f);
 
+#define isEOF(f) feof((f)->stream)
 
 int mGetc(struct MFile CP f);
 

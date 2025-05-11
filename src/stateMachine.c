@@ -10,6 +10,8 @@
 
 char parseBuf[PARSE_BUF_SIZE];
 
+int lastWrittenChar = EOF;
+
 enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP tmp, char *tmpPath) {
   int i;
   const char *s;
@@ -134,7 +136,7 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
         if (EOF == pc) {
           ps = PS_FinalizeSource;
           break;
-        } else if (feof(src->stream)) {
+        } else if (isEOF(src)) {
           pc = parsePatchControl(patch);
           switch (pc) {
             case PC_EOF:      ps = PS_FinalizeSource; break;
@@ -152,18 +154,24 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
         break;
       case PS_FinalizeSource:
         log(L_ParseState, logArg.parseState = ps);
-        ERROR_CHECK(copyRest(src, *tmp, tmpPath));
+        if (!isEOF(src))
+          ERROR_CHECK(copyRest(src, *tmp, tmpPath));
+        ERROR_CHECK(closeFile(src));
+        if ('\n' != lastWrittenChar)
+          ERROR_CONDITION(FileError, '\n' != fputc('\n', *tmp), errorArg.path = tmpPath);
+        ERROR_CONDITION(UnsuccessfulFileClose, fclose(*tmp), errorArg.path = tmpPath);
+        lastWrittenChar = EOF;
 #ifdef _WIN32
         /* Windows requires the destination file to not exist */
         {
           char backupPath[PATH_MAX];
           ERROR_CHECK(tmpFile(NULL, srcPath, backupPath, "BAK"));
-          ERROR_CONDITION(RenameFile, rename(srcPath, backupPath), errorArg.pathsAB = ((struct PathsAB){srcPath, backupPath}));
-          ERROR_CONDITION(RenameFile, rename(tmpPath, srcPath), errorArg.pathsAB = ((struct PathsAB){tmpPath, srcPath}));
-          ERROR_CONDITION(RemoveFile, remove(backupPath), errorArg.path = backupPath);
+          ERROR_CONDITION(RenameFileFail, rename(srcPath, backupPath), errorArg.pathsAB = ((struct PathsAB){srcPath, backupPath}));
+          ERROR_CONDITION(RenameFileFail, rename(tmpPath, srcPath), errorArg.pathsAB = ((struct PathsAB){tmpPath, srcPath}));
+          ERROR_CONDITION(RemoveFileFail, remove(backupPath), errorArg.path = backupPath);
         }
 #else
-        ERROR_CONDITION(RenameFile, rename(tmpPath, srcPath), errorArg.pathsAB = ((struct PathsAB){tmpPath, srcPath}));
+        ERROR_CONDITION(RenameFileFail, rename(tmpPath, srcPath), errorArg.pathsAB = ((struct PathsAB){tmpPath, srcPath}));
 #endif /* _WIN32 */
         ps = PS_End;
         FALLTHROUGH;

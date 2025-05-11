@@ -5,6 +5,9 @@
 
 extern char parseBuf[];
 
+/* not all transfer functions set this */
+extern int lastWrittenChar;
+
 enum ErrorId advanceToLineCopy(struct MFile CP from, FILE CP to, FP(char) toPath, const int targetLine);
 
 enum ErrorId matchAndCopy(struct MFile CP src, struct MFile CP patch, FILE CP to, FP(char) toPath);

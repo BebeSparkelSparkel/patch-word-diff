@@ -88,7 +88,7 @@
   cons(map(__VA_ARGS__, UpdatePosition,  = EOF - 2, \
            ERROR_PRINT("Failed to update position\n")), \
   cons(map(__VA_ARGS__, FileError,  = EOF - 1, \
-           ERROR_PRINT("File I/O error with file: %s\n", errorArg.path)), \
+           ERROR_PRINT("I/O error of \"%s\" with file: %s\n", strerror(errno), errorArg.path)), \
   cons(map(__VA_ARGS__, eof,  = EOF, \
            ERROR_PRINT("Unexpected EOF\n")), \
   cons(map(__VA_ARGS__, Success,  = 0, \
@@ -121,9 +121,9 @@
            ERROR_PRINT("Failed to close file: %s\n", errorArg.path)), \
   cons(map(__VA_ARGS__, DifferingSourceUpdatePaths, , \
            ERROR_PRINT("Differing source update paths of %s and %s\n", errorArg.pathsAB.pathA, errorArg.pathsAB.pathB)), \
-  cons(map(__VA_ARGS__, RenameFile, , \
+  cons(map(__VA_ARGS__, RenameFileFail, , \
            ERROR_PRINT("Failed to rename file from '%s' to '%s': %s\n", errorArg.pathsAB.pathA, errorArg.pathsAB.pathB, strerror(errno))), \
-  cons(map(__VA_ARGS__, RemoveFile, , \
+  cons(map(__VA_ARGS__, RemoveFileFail, , \
            ERROR_PRINT("Failed to remove file '%s': %s\n", errorArg.path, strerror(errno))), \
   cons(map(__VA_ARGS__, CannotFindLineInUpdateFile, , \
            ERROR_PRINT("Cannot find line %d in update file %s\n", errorArg.pathLine.line, errorArg.pathLine.path)), \
@@ -176,13 +176,14 @@
   cons(map(__VA_ARGS__, UndefinedBehavior, , \
            undefinedBehavior: ERROR_PRINT("Undefined behavior of %s\n", errorArg.msg)), \
   cons(map(__VA_ARGS__, WarningAsError, , \
-           switch(logId) { LOG_TABLE(CAT, CASE_LOG_ERROR) } ), \
+           switch(logId) { LOG_TABLE(CAT, _CASE_LOG_ERROR) } ), \
        map(__VA_ARGS__, UnknownError, , \
            ERROR_PRINT("Unknown error\n")) \
       )))))))))))))))))))))))))))))))))
 
-#define CASE_LOG_ERROR(_, id, __, format, ...) \
+#define _CASE_LOG_ERROR(_, id, __, format, ...) \
   case id: ERROR_PRINT(format); break;
+#include <stdio.h>
 
 enum ErrorId {
   ERROR_TABLE(COMMA_INTER, COMPOSE, IDENTITY, CAT)

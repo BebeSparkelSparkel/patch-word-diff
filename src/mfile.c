@@ -30,7 +30,7 @@ void initMFile(struct MFile CP f) {
 }
 
 enum ErrorId closeFile(struct MFile CP f) {
-  ASSERT_MFILE(f);
+  ASSERT_MFILE_EOF(f);
   ERROR_CONDITION(UnsuccessfulFileClose, fclose(f->stream), errorArg.path = f->path);
   initMFile(f);
   return Success;
