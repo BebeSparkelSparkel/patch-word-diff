@@ -1,0 +1,6 @@
+diff --git a/inplace.txt b/inplace.txt
+index 24c5735..f9686f5 100644
+--- a/inplace.txt
++++ b/inplace.txt
+@@ -1 +1 @@
+{+abc+} def

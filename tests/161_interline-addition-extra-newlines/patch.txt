@@ -1,0 +1,10 @@
+diff --git a/source.txt b/result.txt
+index 5bd55f9..3652a25 100644
+--- a/source.txt
++++ b/result.txt
+@@ -1,2 +1,5 @@
+abc
+
+{+def+}
+
+ghi

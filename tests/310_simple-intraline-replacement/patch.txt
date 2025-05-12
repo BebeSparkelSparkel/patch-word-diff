@@ -1,0 +1,6 @@
+diff --git a/source.txt b/result.txt
+index ced6b46..7a9b46f 100644
+--- a/source.txt
++++ b/result.txt
+@@ -1 +1 @@
+abc [-def-]{+xyz+} ghi

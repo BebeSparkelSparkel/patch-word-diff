@@ -1,0 +1,14 @@
+diff --git a/source.txt b/result.txt
+index 7a4a73a..db03386 100644
+--- a/source.txt
++++ b/result.txt
+@@ -1,7 +1,7 @@
+[-first line-]{+line one+}
+second line
+[-third-]line {+three+}
+fourth line
+[-fifth line-]
+{+line five+}
+sixth line
+{+line seven+}
+[-seventh line-]

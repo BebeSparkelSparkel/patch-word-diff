@@ -1,0 +1,9 @@
+diff --git a/source.txt b/result.txt
+index aec6179..65d0338 100644
+--- a/source.txt
++++ b/result.txt
+@@ -1,4 +1,4 @@
+abc
+[-def-]{+xyz+}
+ghi
+[-jkl-]{+mno+}
