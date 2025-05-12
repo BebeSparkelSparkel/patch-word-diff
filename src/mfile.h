@@ -29,10 +29,11 @@
   cons(map(__VA_ARGS__,         stream, FILE *,                  ,          ASSIGN(STREAM),    VALUE(NULL) ), \
   cons(map(__VA_ARGS__,           line,    int,                  ,               ASSIGN(1), VALUE(INT_MIN) ), \
   cons(map(__VA_ARGS__,         column,    int,                  ,               ASSIGN(1), VALUE(INT_MIN) ), \
+  cons(map(__VA_ARGS__, prevLineColumn,    int,                  ,           ASSIGN_NEG(1), VALUE(INT_MIN) ), \
   cons(map(__VA_ARGS__,         ungetI,    int,                  ,           ASSIGN_NEG(1), VALUE(INT_MIN) ), \
   cons(map(__VA_ARGS__, ungetBufBackup,   char,  [UNGET_BUF_SIZE],                   EMPTY,   VALUE(EMPTY) ), \
        map(__VA_ARGS__,           path,   char,        [PATH_MAX], STRNCPY(path, PATH_MAX), VALUE_DEREF(0) ) \
-      )))))
+      ))))))
 
 struct MFile {
   MFILE_TABLE(END_EXPRESSION_INTER, COMPOSE, EXPAND_ARG(CAT3), FLIP);
@@ -87,6 +88,8 @@ int isClosed(FP(struct MFile) f);
 #define isEOF(f) feof((f)->stream)
 
 int mGetc(struct MFile CP f);
+
+int mGetCOrEOF(struct MFile CP f);
 
 char *mGets(char *str, int size, struct MFile CP f);
 

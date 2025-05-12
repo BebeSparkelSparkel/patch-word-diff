@@ -3,15 +3,20 @@
 #include "logging.h"
 
 #define LEVEL_PREFIX(level) _LEVEL_ ## level()
-#define _LEVEL_None()    "NONE: "
-#define _LEVEL_Warning() "WARN: "
-#define _LEVEL_Info()    "INFO: "
-#define _LEVEL_Verbose() "VERB: "
+#define _LEVEL_None()    "NONE"
+#define _LEVEL_Warning() "WARN"
+#define _LEVEL_Info()    "INFO"
+#define _LEVEL_Verbose() "VERB"
 #define _LEVEL_Debug()   DBUG_PREFIX
 
 #define CASE_LOG(_, id, level, format, ...) \
   case id: \
-    fprintf(stderr, LEVEL_PREFIX(level) format); \
+    if (LogDebug > logLevel) \
+      fprintf(stderr, LEVEL_PREFIX(level) ": " format); \
+    else { \
+      fprintf(stderr, LEVEL_PREFIX(level) " [at %s:%3d in %s]: ", logOrigin.path, logOrigin.line, logOrigin.function); \
+      fprintf(stderr, format); \
+    } \
     break;
 
 void _log(enum LogId l) {

@@ -135,9 +135,11 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
       case PS_EOF:
         log(L_ParseState, logArg.parseState = ps);
         if (EOF == pc) {
+          log(L_EOF, logArg.path = patch->path);
           ps = PS_FinalizeSource;
           break;
         } else if (isEOF(src)) {
+          log(L_EOF, logArg.path = src->path);
           pc = parsePatchControl(patch);
           switch (pc) {
             case PC_EOF:      ps = PS_FinalizeSource; break;

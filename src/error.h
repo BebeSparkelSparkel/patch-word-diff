@@ -7,17 +7,21 @@
  */
 #undef ERROR_CHECK
 #define ERROR_CHECK(E) \
-  e = E; \
-  if (Success != e) { \
-    SET_ORIGIN; \
-    error(e, &src, &patch, tmp); \
+  { \
+    e = E; \
+    if (Success != e) { \
+      SET_ORIGIN; \
+      error(e, &src, &patch, tmp); \
+    } \
   }
 
 #undef ERROR_SET
 #define ERROR_SET(E, argAssignments) \
-  SET_ORIGIN; \
-  argAssignments; \
-  ERROR_CHECK(E)
+  { \
+    SET_ORIGIN; \
+    argAssignments; \
+    ERROR_CHECK(E); \
+  }
 
 #undef ERROR_CONDITION
 #define ERROR_CONDITION(E, condition, argAssignments) \
@@ -32,17 +36,21 @@
  */
 #undef ERROR_CHECK
 #define ERROR_CHECK(E) \
-  e = E; \
-  if (Success != e) { \
-    SET_ORIGIN; \
-    return e; \
+  { \
+    e = E; \
+    if (Success != e) { \
+      SET_ORIGIN; \
+      return e; \
+    } \
   }
 
 #undef ERROR_SET
 #define ERROR_SET(E, argAssignments) \
-  SET_ORIGIN; \
-  argAssignments; \
-  return E
+  { \
+    SET_ORIGIN; \
+    argAssignments; \
+    return E; \
+  }
 
 #undef ERROR_CONDITION
 #define ERROR_CONDITION(E, condition, argAssignments) \

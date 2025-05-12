@@ -39,7 +39,7 @@ enum ErrorId cli(const int argc, FP(char) CP argv, FP(struct CLIParameters) para
         }
     }
   }
-  logIf(L_TooVerbose, logLevel > LOG_MAX, );
+  logIf(L_TooVerbose, LOG_MAX < *params->logLevel , );
 
   /* Patch path is the last argument.
    * If `-` then stdin is used. */

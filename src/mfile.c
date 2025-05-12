@@ -44,9 +44,10 @@ int isClosed(FP(struct MFile) f) {
 #undef VALUE_DEREF
 }
 
-static int updatePosition(int c, struct MFile CP f) {
+static int incrementPosition(int c, struct MFile CP f) {
   if ('\n' == c) {
     ++f->line;
+    f->prevLineColumn = f->column;
     f->column = 1;
   }
   else EOF_MFILE_CHECK(c, f)
@@ -54,13 +55,33 @@ static int updatePosition(int c, struct MFile CP f) {
   return c;
 }
 
-int mGetc(struct MFile CP f) {
+static void decrementPosition(const int c, struct MFile CP f) {
+  assert(0 < c);
+  if ('\n' == c) {
+    --f->line;
+    f->column = f->prevLineColumn;
+    f->prevLineColumn = -1;
+  }
+  else
+    --f->column;
+}
+
+static int _mGetc(struct MFile CP f) {
   int c;
-  ASSERT_MFILE(f);
   c = 0 <= f->ungetI
     ? f->ungetBufBackup[f->ungetI--]
     : getc(f->stream);
-  return updatePosition(c, f);
+  return incrementPosition(c, f);
+}
+
+int mGetc(struct MFile CP f) {
+  ASSERT_MFILE(f);
+  return _mGetc(f);
+}
+
+int mGetCOrEOF(struct MFile CP f) {
+  ASSERT_MFILE_EOF(f);
+  return _mGetc(f);
 }
 
 char *mGets(char CP str, const int size, struct MFile CP f) {
@@ -69,7 +90,7 @@ char *mGets(char CP str, const int size, struct MFile CP f) {
   while (0 <= f->ungetI && i < size - 1) {
     int c = f->ungetBufBackup[f->ungetI--];
     assert(0 < c);
-    updatePosition(c, f);
+    incrementPosition(c, f);
     str[i++] = c;
   }
   str[i] = '\0';
@@ -81,7 +102,7 @@ char *mGets(char CP str, const int size, struct MFile CP f) {
     }
     while ('\0' != str[i]) {
       int r;
-      r = updatePosition(str[i++], f);
+      r = incrementPosition(str[i++], f);
       assert(0 <= r);
     }
   }
@@ -90,7 +111,7 @@ char *mGets(char CP str, const int size, struct MFile CP f) {
 
 static int ungetBackup(int c, struct MFile CP f) {
   if (UNGET_BUF_SIZE > f->ungetI) {
-    --f->column;
+    decrementPosition(c, f);
     return f->ungetBufBackup[f->ungetI++] = c;
   }
   {
@@ -124,16 +145,15 @@ static int ungetBackup(int c, struct MFile CP f) {
 int mUngetc(const int c, struct MFile CP f) {
   int r;
   ASSERT_MFILE(f);
-  assert('\n' != c);
   assert(EOF != c);
-  assert('!' <= c);
+  assert('!' <= c || '\n' == c);
   assert('~' >= c);
   if (0 <= c) {
     if (0 > f->ungetI) {
       r = ungetc(c, f->stream);
       if (EOF == r)
         return ungetBackup(c, f);
-      --f->column;
+      decrementPosition(c, f);
       return r;
     }
     return ungetBackup(c, f);

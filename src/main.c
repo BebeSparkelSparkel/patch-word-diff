@@ -14,6 +14,7 @@ union ErrorArg errorArg;
 enum LogLevel logLevel = LogWarning;
 enum LogId logId;
 union LogArg logArg;
+struct LogOrigin logOrigin;
 char werror = 0;
 
 #define IN_MAIN_FUNCTION
