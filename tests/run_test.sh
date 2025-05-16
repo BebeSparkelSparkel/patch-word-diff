@@ -1,3 +1,5 @@
+#!/bin/sh
+
 GREEN="\033[0;32m"
 RED="\033[0;31m"
 YELLOW="\033[0;33m"
@@ -6,7 +8,7 @@ RESET="\033[0m"
 
 test_dir="$1"
 patchw="$2"
-patchw_args="$3"
+test_args="$3"
 
 if [ ! -d "$test_dir" ]; then
   echo -e "${RED}Error: Test directory '$test_dir' not found${RESET}"
@@ -27,7 +29,7 @@ if [ -f "$test_dir/source.txt" ]; then
 fi
 
 cd "$test_dir"
-$patchw $patchw_args ./patch.txt
+$patchw $test_args ./patch.txt
 exit_code=$?
 
 if [ $exit_code -eq 1 ]; then
