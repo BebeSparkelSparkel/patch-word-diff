@@ -67,8 +67,8 @@ enum LogLevel logIdLevel(enum LogId x);
   if (condition) { \
     argAssignments; \
     logOrigin = (struct LogOrigin){__FILE__, __func__, __LINE__}; \
-    ERROR_CONDITION(WarningAsError, werror && logIdLevel(id) == LogWarning, ) \
-    else if (logIdLevel(id) <= logLevel) \
+    ERROR_CONDITION(WarningAsError, werror && logIdLevel(id) == LogWarning, ); \
+    if (logIdLevel(id) <= logLevel) \
       _log(id); \
   }
 

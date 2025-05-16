@@ -7,27 +7,27 @@
  */
 #undef ERROR_CHECK
 #define ERROR_CHECK(E) \
-  { \
+  do { \
     e = E; \
     if (Success != e) { \
       SET_ORIGIN; \
       error(e, &src, &patch, tmp); \
     } \
-  }
+  } while (0)
 
 #undef ERROR_SET
 #define ERROR_SET(E, argAssignments) \
-  { \
-    SET_ORIGIN; \
+  do { \
     argAssignments; \
     ERROR_CHECK(E); \
-  }
+  } while (0)
 
 #undef ERROR_CONDITION
 #define ERROR_CONDITION(E, condition, argAssignments) \
-  if (condition) { \
-    ERROR_SET(E, argAssignments); \
-  }
+  do { \
+    if (condition) \
+      ERROR_SET(E, argAssignments); \
+  } while (0)
 
 #else
 /**
@@ -36,28 +36,29 @@
  */
 #undef ERROR_CHECK
 #define ERROR_CHECK(E) \
-  { \
+  do { \
     e = E; \
     if (Success != e) { \
       SET_ORIGIN; \
       return e; \
     } \
-  }
+  } while (0)
 
 #undef ERROR_SET
 #define ERROR_SET(E, argAssignments) \
-  { \
+  do { \
     SET_ORIGIN; \
     argAssignments; \
     return E; \
-  }
+  } while (0)
 
 #undef ERROR_CONDITION
 #define ERROR_CONDITION(E, condition, argAssignments) \
-  if (condition) { \
-    SET_ORIGIN; \
-    ERROR_SET(E, argAssignments); \
-  }
+  do { \
+    if (condition) { \
+      ERROR_SET(E, argAssignments); \
+    } \
+  } while (0)
 
 #endif /* IN_MAIN_FUNCTION */
 

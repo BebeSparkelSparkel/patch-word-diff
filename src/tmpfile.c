@@ -31,11 +31,10 @@ enum ErrorId tmpFile(FILE * CP tmp, const char srcPath[PATH_MAX], char tmpPath[P
   ERROR_CONDITION( TmpPathBufferOverflow
                  , PATH_MAX - 1 - tmpPathLen < count
                  , errorArg.path = tmpPath
-  ) else {
-    tmpPath[tmpPathLen] = '.';
-    strcpy(&tmpPath[tmpPathLen + 1], ext);
-    tmpPathLen += count;
-  }
+                 );
+  tmpPath[tmpPathLen] = '.';
+  strcpy(&tmpPath[tmpPathLen + 1], ext);
+  tmpPathLen += count;
 
   for (i = 0; i < INT_MAX; ++i) {
     count = snprintf(tmpPath + tmpPathLen, PATH_MAX - 1 - tmpPathLen, "%d", i);
@@ -46,8 +45,8 @@ enum ErrorId tmpFile(FILE * CP tmp, const char srcPath[PATH_MAX], char tmpPath[P
     f = fopen(tmpPath, "r");
     if (NULL == f) {
       f = fopen(tmpPath, "w");
-      ERROR_CONDITION(UnsuccessfulWriteOpen, NULL == f, errorArg.path = tmpPath)
-      else if (NULL != tmp)
+      ERROR_CONDITION(UnsuccessfulWriteOpen, NULL == f, errorArg.path = tmpPath);
+      if (NULL != tmp)
         *tmp = f;
       else ERROR_CONDITION(UnsuccessfulFileClose, fclose(f), errorArg.path = tmpPath);
       return Success;

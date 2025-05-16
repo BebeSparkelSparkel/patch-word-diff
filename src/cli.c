@@ -47,8 +47,8 @@ enum ErrorId cli(const int argc, FP(char) CP argv, FP(struct CLIParameters) para
     patchPath = argv[i];
 
   {
-    ERROR_CONDITION(MissingPatchFileCommandArgument, NULL == patchPath, )
-    else if (!strcmp(patchPath, "-"))
+    ERROR_CONDITION(MissingPatchFileCommandArgument, NULL == patchPath, );
+    if (!strcmp(patchPath, "-"))
       streamFile(params->patch, stdin, "stdin");
     else OPEN_READ(params->patch, patchPath);
     log(L_PatchPath, logArg.path = params->patch->path);
