@@ -1,5 +1,5 @@
 #include <string.h>
-#include <assert.h>
+#include "assert.h"
 
 #include "tmpfile.h"
 #include "error.h"

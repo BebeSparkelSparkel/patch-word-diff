@@ -1,7 +1,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <assert.h>
+#include "assert.h"
 
 #include "cpp.h"
 #include "todo.h"

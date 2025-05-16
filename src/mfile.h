@@ -2,7 +2,7 @@
 #define MFILE_H
 
 #include <limits.h>
-#include <assert.h>
+#include "assert.h"
 
 #include "error.h"
 #include "cpp.h"

@@ -1,4 +1,4 @@
-#include <assert.h>
+#include "assert.h"
 #include <ctype.h>
 
 #include "mfile.h"
