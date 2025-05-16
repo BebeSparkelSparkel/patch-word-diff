@@ -30,7 +30,10 @@ cd "$test_dir"
 $patchw $patchw_args ./patch.txt
 exit_code=$?
 
-if [ $expected_fail -eq 1 ]; then
+if [ $exit_code -eq 3 -o $exit_code -eq 134 ]; then
+  echo -e "${RED}FAILED${RESET}: Assertion"
+  exit 1
+elif [ $expected_fail -eq 1 ]; then
   if [ $exit_code -ne 0 ]; then
     echo -e "${GREEN}PASSED${RESET}: Test failed as expected"
     exit 0

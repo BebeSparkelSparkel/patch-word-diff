@@ -103,6 +103,7 @@
            assert(NULL != "error should not be called with Success"); \
            errorArg.msg = "error handler called with Success"; \
            goto undefinedBehavior; ), \
+  cons(map(__VA_ARGS__, AbortMicrosoft,  = 3, ), \
   cons(map(__VA_ARGS__, UndefinedFlag, , \
            ERROR_PRINT("Undefined flag '%c' in argument %s\n", errorArg.undefinedFlag.c, errorArg.undefinedFlag.argString)), \
   cons(map(__VA_ARGS__, MissingPatchFileCommandArgument, , \
@@ -185,9 +186,10 @@
            undefinedBehavior: ERROR_PRINT("Undefined behavior of %s\n", errorArg.msg)), \
   cons(map(__VA_ARGS__, WarningAsError, , \
            switch(logId) { LOG_TABLE(CAT, _CASE_LOG_ERROR) } ), \
-       map(__VA_ARGS__, UnknownError, , \
-           ERROR_PRINT("Unknown error\n")) \
-      )))))))))))))))))))))))))))))))))
+  cons(map(__VA_ARGS__, UnknownError, , \
+           ERROR_PRINT("Unknown error\n")), \
+       map(__VA_ARGS__, AbortNix,  = 134, ), \
+      )))))))))))))))))))))))))))))))))))
 
 #define _CASE_LOG_ERROR(_, id, __, format, ...) \
   case id: ERROR_PRINT(format); break;
@@ -196,6 +198,14 @@
 enum ErrorId {
   ERROR_TABLE(COMMA_INTER, COMPOSE, IDENTITY, CAT)
 };
+
+#if __STDC_VERSION__ >= 201112L
+#include <assert.h>
+static_assert(UnknownError < AbortNix, "Number of errors has exceeded 134 and are colliding with the AbortNix enumeration. Error codes need to be refactored.");
+/* #else
+#pragma message "static_assert for error enumeration collision (UnknownError < AbortNix) not supported"
+*/
+#endif
 
 struct CharInString {
   char c;
