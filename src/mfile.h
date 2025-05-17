@@ -95,5 +95,6 @@ char *mGets(char *str, int size, struct MFile CP f);
 
 int mUngetc(const int c, struct MFile CP f);
 
+enum ErrorId mSkipWhitespace(struct MFile CP f);
 
 #endif

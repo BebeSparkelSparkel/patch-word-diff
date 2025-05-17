@@ -1,11 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "assert.h"
 #include <string.h>
 
 #include "mfile.h"
 #include "error.h"
 #include "todo.h"
+
+#include <assert.h> /* order matters so include last */
 
 #ifndef TRACE_SIZE
 #define TRACE_SIZE 256

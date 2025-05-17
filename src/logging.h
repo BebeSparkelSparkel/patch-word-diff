@@ -4,6 +4,7 @@
 #include "cpp.h"
 #include "headers.h"
 #include "parseState.h"
+#include "patchControl.h"
 
 #define LOG_LEVEL_TABLE(cons, map, ...) \
   cons(map(__VA_ARGS__, None,    = 0), \
@@ -34,9 +35,28 @@
            LOG_FORMAT("Patching source file: %s\n", logArg.path) ), \
   cons(map(__VA_ARGS__, L_ParseState, Debug, \
            LOG_FORMAT("ParseState: %s\n", parseState2enumStr(logArg.parseState)) ), \
-       map(__VA_ARGS__, L_Message, Info, \
+  cons(map(__VA_ARGS__, L_WhiteSpace, Debug, \
+           LOG_FORMAT("WhiteSpace: " \
+                      "Previous State = %s, " \
+                      "WhiteSpace Character = %d, " \
+                      "WhiteSpace Count = %d, " \
+                      "Next Character = %d, " \
+                      "Patch Control = %s\n", \
+                      parseState2enumStr(logArg.whitespace.parseState), \
+                      logArg.whitespace.character, \
+                      logArg.whitespace.count, \
+                      logArg.whitespace.nextCharacter, \
+                      patchControl2enumStr(logArg.whitespace.patchControl) \
+                      ) ), \
+  cons(map(__VA_ARGS__, L_WarningMessage, Warning, \
+           LOG_FORMAT("%s\n", logArg.message) ), \
+  cons(map(__VA_ARGS__, L_InfoMessage, Info, \
+           LOG_FORMAT("%s\n", logArg.message) ), \
+  cons(map(__VA_ARGS__, L_VerboseMessage, Verbose, \
+           LOG_FORMAT("%s\n", logArg.message) ), \
+       map(__VA_ARGS__, L_DebugMessage, Debug, \
            LOG_FORMAT("%s\n", logArg.message) ) \
-      )))))))))
+      )))))))))))))
 
 #define LOG_MAX LOG_LEVEL_TABLE(PLUS_INTER, HEAD, 1) - 1
 
@@ -81,6 +101,13 @@ union LogArg {
   struct DiffHeader *diffHeader;
   struct HunkHeader *hunkHeader;
   enum ParseState parseState;
+  struct WhiteSpaceLog {
+    enum ParseState parseState;
+    int character,
+        count,
+        nextCharacter;
+    enum PatchControl patchControl;
+  } whitespace;
 };
 
 extern union LogArg logArg;

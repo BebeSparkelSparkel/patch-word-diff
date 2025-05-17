@@ -104,7 +104,9 @@
            assert(NULL != "error should not be called with Success"); \
            errorArg.msg = "error handler called with Success"; \
            goto undefinedBehavior; ), \
-  cons(map(__VA_ARGS__, AssertFalse,  = 1, ), \
+  cons(map(__VA_ARGS__, AssertFalse,  = 1, \
+           ERROR_PRINT("Assertion (%s) failed\n", errorArg.condition)), \
+  cons(map(__VA_ARGS__, Todo, = 2, ), \
   cons(map(__VA_ARGS__, UndefinedFlag, , \
            ERROR_PRINT("Undefined flag '%c' in argument %s\n", errorArg.undefinedFlag.c, errorArg.undefinedFlag.argString)), \
   cons(map(__VA_ARGS__, MissingPatchFileCommandArgument, , \
@@ -189,7 +191,7 @@
            switch(logId) { LOG_TABLE(CAT, _CASE_LOG_ERROR) } ), \
        map(__VA_ARGS__, UnknownError, , \
            ERROR_PRINT("Unknown error\n")) \
-      ))))))))))))))))))))))))))))))))))
+      )))))))))))))))))))))))))))))))))))
 
 #define _CASE_LOG_ERROR(_, id, __, format, ...) \
   case id: ERROR_PRINT(format); break;
@@ -253,7 +255,8 @@ struct OptionType {
 
 union ErrorArg {
   const char *msg,
-             *path;
+             *path,
+             *condition;
   struct CharInString undefinedFlag;
   struct PathLine pathLine;
   struct PathLineMsg pathLineMsg;

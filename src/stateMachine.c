@@ -1,5 +1,7 @@
 #include <string.h>
+#include <ctype.h>
 
+#include "todo.h"
 #include "parse.h"
 #include "mfile.h"
 #include "error.h"
@@ -13,7 +15,7 @@ char parseBuf[PARSE_BUF_SIZE];
 int lastWrittenChar = EOF;
 
 enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP tmp, char *tmpPath) {
-  int i;
+  int i, c, c2;
   const char *s;
   enum ErrorId e;
   enum PatchControl pc;
@@ -32,6 +34,9 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
         switch (pc) {
           case PC_Git: ps = PS_Git; break;
           case PC_Minus: ps = PS_Diff; break;
+          case PC_WhiteSpace:
+            ERROR_CHECK(mSkipWhitespace(patch));
+            break;
           case PC_EOF:
             ERROR_SET(EmptyPatchFile, errorArg.path = patch->path);
             break;
@@ -94,6 +99,8 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
               case PC_Hunk:     ps = PS_Hunk;   break;
               case PC_Git:      ps = PS_Git;    break;
               case PC_EOF:      ps = PS_EOF;    break;
+              case PC_WhiteSpace:
+                goto whitespace;
               case PC_FileError:
                 ERROR_SET(FileError, errorArg.path = patch->path);
                 break;
@@ -125,7 +132,18 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
       case PS_Add:
         log(L_ParseState, logArg.parseState = ps);
         ERROR_CHECK(copyUntilClose(patch, *tmp, tmpPath));
-        ps = PS_Match;
+        pc = parsePatchControl(patch);
+        switch (pc) {
+          case PC_WhiteSpace:
+            goto whitespace;
+            break;
+          case PC_None:
+            ps = PS_Match;
+            break;
+          default:
+            TODO("PS_Add with folling %s", patchControl2enumStr(pc));
+            break;
+        }
         break;
       case PS_Append:
         log(L_ParseState, logArg.parseState = ps);
@@ -140,6 +158,7 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
           break;
         } else if (isEOF(src)) {
           log(L_EOF, logArg.path = src->path);
+          ERROR_CHECK(mSkipWhitespace(patch));
           pc = parsePatchControl(patch);
           switch (pc) {
             case PC_EOF:      ps = PS_FinalizeSource; break;
@@ -186,6 +205,61 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
       case PS_ExitLoop:
         ERROR_SET(UndefinedBehavior, errorArg.msg = "PS_ExitLoop should never be matched");
         break;
+    }
+    continue;
+
+    whitespace:
+    log(L_DebugMessage, logArg.message = "goto whitespace");
+    c = mGetc(patch);
+    assert(isspace(c));
+    i = 1;
+    while (1) {
+      c2 = mGetc(patch);
+      if (c2 != c)
+        break;
+      i++;
+    }
+    ERROR_CONDITION(FileError, EOF == c2 && MF_ERROR_CHECK(patch), errorArg.path = patch->path);
+    if (EOF == c2 && '\n' == c) {
+      ps = PS_EOF;
+    }
+    else {
+      c2 = mUngetc(c2, patch);
+      ERROR_CONDITION(FileError, EOF == c2, errorArg.path = patch->path);
+      pc = parsePatchControl(patch);
+      log(L_WhiteSpace, logArg.whitespace = ((struct WhiteSpaceLog){ps, c, i, c2, pc}));
+      switch (TUPLE(ps, pc)) {
+        case TUPLE(PS_Match, PC_AddStart):
+          for (; 0 < i; --i) {
+            c2 = fputc(c, *tmp);
+            ERROR_CONDITION(FileError, EOF == c2, errorArg.path = tmpPath);
+          }
+          ps = PS_Add;
+          break;
+        //case TUPLE(PS_Match, PC_None):
+        //  for (; 0 < i; --i) {
+        //    c2 = fputc(c, *tmp);
+        //    ERROR_CONDITION(FileError, EOF == c2, errorArg.path = tmpPath);
+        //  }
+        //  ps = PS_Match;
+        //  break;
+        default:
+          TODO("Whitespace following state %s with patch control %s", parseState2enumStr(ps), patchControl2enumStr(pc));
+          break;
+        //switch (pc) {
+        //  case PC_WhiteSpace:
+        //    TODO("Mixed whitespace");
+        //    break;
+        //  case PC_AddStart:
+        //    TODO("Whitespace preceeding an addition");
+        //    break;
+        //  case PC_RmStart:
+        //    TODO("Whitespace preceeding a removal");
+        //    break;
+        //  default:
+        //    TODO("Other cases following whitespace control");
+        //}
+      }
     }
   }
   return Success;

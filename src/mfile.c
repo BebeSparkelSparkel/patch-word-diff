@@ -1,4 +1,5 @@
 #include <string.h>
+#include <ctype.h>
 #include "assert.h"
 
 #include "mfile.h"
@@ -146,7 +147,7 @@ int mUngetc(const int c, struct MFile CP f) {
   int r;
   ASSERT_MFILE(f);
   assert(EOF != c);
-  assert('!' <= c || '\n' == c);
+  assert(' ' <= c || '\n' == c || '\t' == c);
   assert('~' >= c);
   if (0 <= c) {
     if (0 > f->ungetI) {
@@ -159,4 +160,16 @@ int mUngetc(const int c, struct MFile CP f) {
     return ungetBackup(c, f);
   }
   return c;
+}
+
+enum ErrorId mSkipWhitespace(struct MFile CP f) {
+  int c;
+  do {
+    c = mGetCOrEOF(f);
+  } while (isspace(c));
+  if (EOF != c) {
+    c = mUngetc(c, f);
+    ERROR_CONDITION(FileError, EOF == c, errorArg.path = f->path);
+  }
+  return Success;
 }

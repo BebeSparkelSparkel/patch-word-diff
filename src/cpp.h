@@ -53,6 +53,13 @@
 #define THIRD(_, __, x, ...) x
 
 /**
+ * Enumeration tuple
+ *
+ * Note: Only works with 8 bit (less than 256) enums
+ */
+#define TUPLE(x, y) (((int)(x) << 8) | (int)(y))
+
+/**
  * Alias macros for readability
  * 
  * Note: These macros need corresponding implementation helpers prefixed with underscore.

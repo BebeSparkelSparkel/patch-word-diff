@@ -23,9 +23,11 @@ enum PatchControl parsePatchControl(struct MFile CP f) {
       c;
   const char *ps[] = { PATCH_CONTROL_TABLE(TAIL, COMMA_INTER, THIRD, ) };
   ASSERT_MFILE_EOF(f);
-  do
-    c = mGetCOrEOF(f);
-  while (isspace(c));
+  c = mGetCOrEOF(f);
+  if (isspace(c)) {
+    c = mUngetc(c, f);
+    return EOF == c ? PC_FileError : PC_WhiteSpace;
+  }
   do {
     if (EOF == c)
       return ferror(f->stream) ? PC_FileError : PC_EOF;
