@@ -48,10 +48,10 @@ else
   echo
 fi
 
-if [ -f "${TEST_DIR}/result.txt" ]; then
+if [ -f "${TEST_DIR}/expect.txt" ]; then
   echo -e "${BOLD}${BLUE}Expected Result:${RESET}"
   echo -e "${CYAN}------------------${RESET}"
-  sed 's/^/  /' "${TEST_DIR}/result.txt"
+  sed 's/^/  /' "${TEST_DIR}/expect.txt"
   echo -e "${CYAN}------------------${RESET}"
   echo
 else

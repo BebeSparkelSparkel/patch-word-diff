@@ -32,10 +32,16 @@ cd "$test_dir"
 $patchw $test_args ./patch.txt
 exit_code=$?
 
+function prettyPrintFiles {
+  ../pretty-print.sh "../$test_dir"
+}
+
 if [ $exit_code -eq 1 ]; then
+  prettyPrintFiles
   echo -e "${RED}FAILED${RESET}: Assertion"
   exit 1
 elif [ $exit_code -eq 2 ]; then
+  prettyPrintFiles
   echo -e "${RED}FAILED${RESET}: Unimplemented"
   exit 1
 elif [ $expected_fail -eq 1 ]; then
@@ -43,7 +49,8 @@ elif [ $expected_fail -eq 1 ]; then
     echo -e "${GREEN}PASSED${RESET}: Test failed as expected with exit code $exit_code"
     exit 0
   else
-    if diff -q inplace.txt result.txt > /dev/null; then
+    if diff -q inplace.txt expect.txt > /dev/null; then
+      prettyPrintFiles
       echo -e "${RED}FAILED${RESET} $test_dir: Test was expected to fail but succeeded"
       exit 1
     else
@@ -53,15 +60,17 @@ elif [ $expected_fail -eq 1 ]; then
   fi
 else
   if [ $exit_code -ne 0 ]; then
+    prettyPrintFiles
     echo -e "${RED}FAILED${RESET} $test_dir: patchw returned error code $exit_code"
     exit 1
-  elif diff -q inplace.txt result.txt > /dev/null; then
+  elif diff -q inplace.txt expect.txt > /dev/null; then
     echo -e "${GREEN}PASSED${RESET}"
     exit 0
   else
-    echo -e "${RED}FAILED${RESET} $test_dir: Output doesn't match expected result"
+    prettyPrintFiles
+    echo -e "${RED}FAILED${RESET} $test_dir: Output doesn't match expected expect"
     echo "Expected:"
-    cat result.txt
+    cat expect.txt
     echo "Got:"
     cat inplace.txt
     exit 1

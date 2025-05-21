@@ -17,9 +17,9 @@ test:
 	@echo "Test summary: All tests completed"
 	@echo "----------------------------"
 
-%/patch.txt: %/source.txt %/result.txt
-	@cd $* && git diff --word-diff --no-index source.txt result.txt | \
-		sed -E 's/(source|result)\.txt/inplace.txt/g' > $(notdir $@)
+%/patch.txt: %/source.txt %/expect.txt
+	@cd $* && git diff --word-diff --no-index source.txt expect.txt | \
+		sed -E 's/(source|expect)\.txt/inplace.txt/g' > $(notdir $@)
 	@chmod a-w $@
 
 $(TEST_DIRS): %: %/patch.txt
