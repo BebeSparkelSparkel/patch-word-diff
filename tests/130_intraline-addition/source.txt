@@ -1,1 +1,1 @@
-abc def ghi
+abc ghi

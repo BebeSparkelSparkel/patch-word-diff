@@ -1,7 +1,7 @@
-diff --git a/source.txt b/result.txt
+diff --git a/inplace.txt b/inplace.txt
 index 7a4a73a..db03386 100644
---- a/source.txt
-+++ b/result.txt
+--- a/inplace.txt
++++ b/inplace.txt
 @@ -1,7 +1,7 @@
 [-first line-]{+line one+}
 second line

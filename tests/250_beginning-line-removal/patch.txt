@@ -1,7 +1,7 @@
-diff --git a/source.txt b/result.txt
+diff --git a/inplace.txt b/inplace.txt
 index 5f5521f..24c5735 100644
---- a/source.txt
-+++ b/result.txt
+--- a/inplace.txt
++++ b/inplace.txt
 @@ -1,2 +1 @@
 [-abc-]
 def
