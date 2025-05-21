@@ -8,10 +8,6 @@
 #include "cpp.h"
 #include "patchControl.h"
 
-#define SIZEOF(x) sizeof(x)
-
-#define UNGET_BUF_SIZE PATCH_CONTROL_TABLE(TAIL, MAX, COMPOSE, SIZEOF, SND)
-
 /* FILE Error Check */
 #define EOF_FILE_CHECK(x, f, PATH) \
   if (x < 0) { \

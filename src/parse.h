@@ -4,12 +4,12 @@
 #include "mfile.h"
 
 #define PARSE_GIT_HEADER \
-  PARSE_LINE(ParseFail_GitHeader, 2, "a/%s b/%s\n", "Expected format: `diff --git a/<pathA> b/<pathB>\\n`", gh.pathA, gh.pathB); \
-  PARSE_LINE(ParseFail_GitHeader_Index, 3, "index %[0-9a-f]..%[0-9a-f] %d\n", "Expected format: `index <indexA>..<indexB> <mode>\\n`", gh.indexA, gh.indexB, &gh.mode)
+  PARSE_LINE(ParseFail_GitHeader, 2, "a/%s b/%s\n", "Expected format: `diff --git a/<pathA> b/<pathB>\\n`", gitHeader.pathA, gitHeader.pathB); \
+  PARSE_LINE(ParseFail_GitHeader_Index, 3, "index %[0-9a-f]..%[0-9a-f] %d\n", "Expected format: `index <indexA>..<indexB> <mode>\\n`", gitHeader.indexA, gitHeader.indexB, &gitHeader.mode)
 
 #define PARSE_DIFF_HEADER \
-  PARSE_LINE(ParseFail_DiffHeader_PathMinus, 1, /* "--- " is consumed by parsePatchControl */ "a/%s\n", "Expected format: `--- a/<path>\\n`", dh.pathMinus); \
-  PARSE_LINE(ParseFail_DiffHeader_PathPlus, 1,                                                "+++ b/%s\n", "Expected format: `+++ b/<path>\\n`", dh.pathPlus)
+  PARSE_LINE(ParseFail_DiffHeader_PathMinus, 1, /* "--- " is consumed by parsePatchControl */ "a/%s\n", "Expected format: `--- a/<path>\\n`", diffHeader.pathMinus); \
+  PARSE_LINE(ParseFail_DiffHeader_PathPlus, 1,                                                "+++ b/%s\n", "Expected format: `+++ b/<path>\\n`", diffHeader.pathPlus)
 
 enum ErrorId parseHunkHeader(struct MFile CP patch, struct HunkHeader CP hh);
 

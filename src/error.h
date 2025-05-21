@@ -201,6 +201,8 @@ enum ErrorId {
   ERROR_TABLE(COMMA_INTER, COMPOSE, IDENTITY, CAT)
 };
 
+const char *errorId2enumStr(enum ErrorId e);
+
 struct CharInString {
   char c;
   const char *argString;

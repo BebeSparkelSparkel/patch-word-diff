@@ -8,6 +8,12 @@
 
 #include <assert.h> /* order matters so include last */
 
+const char *errorId2enumStr(enum ErrorId e) {
+  switch (e) {
+    ERROR_TABLE(END_EXPRESSION_INTER, COMPOSE, CASE_RETURN_STRINGIFIED, HEAD);
+  }
+}
+
 #ifndef TRACE_SIZE
 #define TRACE_SIZE 256
 #endif

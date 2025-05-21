@@ -50,14 +50,21 @@
 #define HEAD(x, ...) x
 #define TAIL(_, ...) __VA_ARGS__
 #define SND(_, x, ...) x
-#define THIRD(_, __, x, ...) x
+#define THD(_, __, x, ...) x
 
 /**
- * Enumeration tuple
+ * Enumeration 2 tuple
  *
- * Note: Only works with 8 bit (less than 256) enums
+ * Note: Only works with 8 bit (<= 256) enums
  */
-#define TUPLE(x, y) (((int)(x) << 8) | (int)(y))
+#define TUPLE(x, y) (((int)(x) << 8) | ((int)(y) & 0xFF))
+
+/**
+ * Enumeration 3 tuple
+ *
+ * Note: Only works with 5 bit (<= 32) enums
+ */
+#define TUPLE3(x, y, z) (((int)(x) << 10) | (((int)(y) & 0x1F) << 5) | ((int)(z) & 0x1F))
 
 /**
  * Alias macros for readability

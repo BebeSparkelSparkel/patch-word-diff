@@ -25,6 +25,10 @@
            LOG_FORMAT("EOF: %s\n", logArg.path) ), \
   cons(map(__VA_ARGS__, L_PatchPath, Verbose, \
            LOG_FORMAT("Patch Path: %s\n", logArg.path) ), \
+  cons(map(__VA_ARGS__, L_TmpPath, Debug, \
+           LOG_FORMAT("Tmp Path: %s\n", logArg.path) ), \
+  cons(map(__VA_ARGS__, L_PatchControl, Debug, \
+           LOG_FORMAT("Patch Control: %s\n", patchControl2enumStr(logArg.patchControl)) ), \
   cons(map(__VA_ARGS__, L_GitHeader, Debug, \
            LOG_FORMAT(FORMAT_GIT_HEADER(*logArg.gitHeader, DBUG_PREFIX ": ")) ), \
   cons(map(__VA_ARGS__, L_DiffHeader, Debug, \
@@ -35,19 +39,6 @@
            LOG_FORMAT("Patching source file: %s\n", logArg.path) ), \
   cons(map(__VA_ARGS__, L_ParseState, Debug, \
            LOG_FORMAT("ParseState: %s\n", parseState2enumStr(logArg.parseState)) ), \
-  cons(map(__VA_ARGS__, L_WhiteSpace, Debug, \
-           LOG_FORMAT("WhiteSpace: " \
-                      "Previous State = %s, " \
-                      "WhiteSpace Character = %d, " \
-                      "WhiteSpace Count = %d, " \
-                      "Next Character = %d, " \
-                      "Patch Control = %s\n", \
-                      parseState2enumStr(logArg.whitespace.parseState), \
-                      logArg.whitespace.character, \
-                      logArg.whitespace.count, \
-                      logArg.whitespace.nextCharacter, \
-                      patchControl2enumStr(logArg.whitespace.patchControl) \
-                      ) ), \
   cons(map(__VA_ARGS__, L_WarningMessage, Warning, \
            LOG_FORMAT("%s\n", logArg.message) ), \
   cons(map(__VA_ARGS__, L_InfoMessage, Info, \
@@ -56,7 +47,7 @@
            LOG_FORMAT("%s\n", logArg.message) ), \
        map(__VA_ARGS__, L_DebugMessage, Debug, \
            LOG_FORMAT("%s\n", logArg.message) ) \
-      )))))))))))))
+      ))))))))))))))
 
 #define LOG_MAX LOG_LEVEL_TABLE(PLUS_INTER, HEAD, 1) - 1
 
@@ -92,6 +83,12 @@ enum LogLevel logIdLevel(enum LogId x);
       _log(id); \
   }
 
+#define logDebug(argAssignments) \
+    if (logIdLevel(L_DebugMessage) <= logLevel) { \
+      argAssignments; \
+      _log(L_DebugMessage); \
+    }
+
 void _log(enum LogId l);
 
 union LogArg {
@@ -101,13 +98,7 @@ union LogArg {
   struct DiffHeader *diffHeader;
   struct HunkHeader *hunkHeader;
   enum ParseState parseState;
-  struct WhiteSpaceLog {
-    enum ParseState parseState;
-    int character,
-        count,
-        nextCharacter;
-    enum PatchControl patchControl;
-  } whitespace;
+  enum PatchControl patchControl;
 };
 
 extern union LogArg logArg;
