@@ -7,7 +7,7 @@ YELLOW = \033[0;33m
 RED = \033[0;31m
 RESET = \033[0m
 
-.PHONY: test clean $(TEST_DIRS)
+.PHONY: test clean $(TEST_DIRS) pretty-print
 
 test:
 	@echo "$(YELLOW)Running patchw tests...$(RESET)"
@@ -17,7 +17,12 @@ test:
 	@echo "Test summary: All tests completed"
 	@echo "----------------------------"
 
-$(TEST_DIRS):
+%/patch.txt: %/source.txt %/result.txt
+	@cd $* && git diff --word-diff --no-index source.txt result.txt | \
+		sed -E 's/(source|result)\.txt/inplace.txt/g' > $(notdir $@)
+	@chmod a-w $@
+
+$(TEST_DIRS): %: %/patch.txt
 	@./run_test.sh $@ "$(PATCHW_ABS)" "$(TEST_ARGS)"
 
 clean:
