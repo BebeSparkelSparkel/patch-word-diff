@@ -4,6 +4,7 @@ GREEN="\033[0;32m"
 RED="\033[0;31m"
 YELLOW="\033[0;33m"
 BLUE="\033[0;34m"
+CYAN="\033[0;36m"
 RESET="\033[0m"
 
 test_dir="$1"
@@ -16,6 +17,15 @@ if [ ! -d "$test_dir" ]; then
 fi
 
 echo -e "Running test: ${YELLOW}$test_dir${RESET}"
+
+# Check if test is marked as pending
+if [ -f "$test_dir/pending.txt" ]; then
+  echo -e "${CYAN}PENDING${RESET}: Test marked as pending"
+  if [ -f "$test_dir/pending.txt" ] && [ -s "$test_dir/pending.txt" ]; then
+    echo -e "${BLUE}Reason: $(cat "$test_dir/pending.txt")${RESET}"
+  fi
+  exit 0
+fi
 
 expected_fail=0
 if [ -f "$test_dir/expect-fail.txt" ]; then

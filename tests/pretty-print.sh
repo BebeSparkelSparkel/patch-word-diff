@@ -59,6 +59,14 @@ else
   echo
 fi
 
+if [ -f "${TEST_DIR}/pending.txt" ]; then
+  echo -e "${BOLD}${CYAN}Note: This test is marked as pending${RESET}"
+  if [ -s "${TEST_DIR}/pending.txt" ]; then
+    echo -e "${CYAN}Reason: $(cat "${TEST_DIR}/pending.txt")${RESET}"
+  fi
+  echo
+fi
+
 if [ -f "${TEST_DIR}/expect-fail.txt" ]; then
   echo -e "${BOLD}${RED}Note: This test is expected to fail${RESET}"
 fi

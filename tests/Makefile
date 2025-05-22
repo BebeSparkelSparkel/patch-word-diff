@@ -5,9 +5,10 @@ TEST_DIRS := $(wildcard [0-9]*_*)
 
 YELLOW = \033[0;33m
 RED = \033[0;31m
+CYAN = \033[0;36m
 RESET = \033[0m
 
-.PHONY: test clean $(TEST_DIRS) pretty-print
+.PHONY: test clean $(TEST_DIRS) pretty-print pending
 
 test:
 	@echo "$(YELLOW)Running patchw tests...$(RESET)"
@@ -36,3 +37,21 @@ pretty-print:
 		exit 1; \
 	fi
 	@./pretty-print.sh "$(TEST)"
+
+pending:
+	@if [ -z "$(TEST)" ]; then \
+		echo -e "$(RED)Error: Please specify a test directory with TEST=directory_name$(RESET)"; \
+		echo "Example: make pending TEST=200_some-test REASON=\"Waiting for feature X\""; \
+		exit 1; \
+	fi; \
+	if [ ! -d "$(TEST)" ]; then \
+		echo -e "$(RED)Error: Test directory '$(TEST)' not found$(RESET)"; \
+		exit 1; \
+	fi; \
+	if [ -n "$(REASON)" ]; then \
+		echo "$(REASON)" > "$(TEST)/pending.txt"; \
+		echo -e "$(CYAN)Marked $(TEST) as pending: $(REASON)$(RESET)"; \
+	else \
+		touch "$(TEST)/pending.txt"; \
+		echo -e "$(CYAN)Marked $(TEST) as pending$(RESET)"; \
+	fi
