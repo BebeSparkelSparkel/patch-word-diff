@@ -1,0 +1,11 @@
+diff --git a/inplace.txt b/inplace.txt
+index 459520c..28a1754 100644
+--- a/inplace.txt
++++ b/inplace.txt
+@@ -1,5 +1,4 @@
+abc
+[-def-]
+ghi
+[-jkl-]
+[+pqr+]
+mno
