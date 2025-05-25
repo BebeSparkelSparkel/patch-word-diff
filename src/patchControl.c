@@ -4,6 +4,8 @@
 #include "mfile.h"
 #include "patchControl.h"
 
+const enum PatchControl minPatchControl = MIN_PATCH_CONTROL;
+
 const char *patchControl2enumStr(enum PatchControl x) {
   switch (x) {
     PATCH_CONTROL_TABLE(END_EXPRESSION_INTER, END_EXPRESSION_INTER, COMPOSE, CASE_RETURN_STRINGIFIED, HEAD);

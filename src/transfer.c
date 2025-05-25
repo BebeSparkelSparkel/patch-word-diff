@@ -36,7 +36,7 @@ enum ErrorId advanceToLineCopy(struct MFile CP from, FILE CP to, FP(char) toPath
 }
 
 /* Used to copy unmodified source and ensuring it matches the text specified by the patch */
-enum ErrorId matchAndCopy(struct MFile CP src, struct MFile CP patch, FILE CP to, FP(char) toPath) {
+enum ErrorId matchAndCopy(struct MFile CP src, struct MFile CP patch, FILE CP to, FP(char) toPath, int (*charExclude)(int c)) {
   int sc, pc, e;
   //ASSERT_MFILE(src);
   ASSERT_MFILE(patch);
@@ -47,32 +47,7 @@ enum ErrorId matchAndCopy(struct MFile CP src, struct MFile CP patch, FILE CP to
     pc = mGetc(patch);
     if (EOF == sc || EOF == pc)
       goto eofHandler;
-    if (sc != pc) {
-      //if (isspace(sc) && isspace(pc)) {
-      //  /* Special handling for newline at end of file when appending */
-      //  if (sc == '\n' && strchr(" \t", pc) != NULL) {
-      //    /* We're at a newline in source but space in patch - replace newline with space */
-      //    e = putc(' ', to);
-      //    ERROR_CONDITION(FileError, EOF == e, errorArg.path = toPath; mUngetc(sc, src));
-      //    lastWrittenChar = ' ';
-      //    sc = mGetc(src);
-      //  } else {
-      //    /* Normal whitespace handling */
-      //    do {
-      //      e = putc(sc, to);
-      //      ERROR_CONDITION(FileError, EOF == e, errorArg.path = toPath; mUngetc(sc, src));
-      //      lastWrittenChar = sc;
-      //      sc = mGetc(src);
-      //    } while(isspace(sc));
-      //  }
-      //  ERROR_CONDITION(FileError, EOF == sc && MF_ERROR_CHECK(src), errorArg.path = src->path);
-      //  do {
-      //    pc = mGetc(patch);
-      //  } while(isspace(pc));
-      //  ERROR_CONDITION(FileError, EOF == pc && MF_ERROR_CHECK(patch), errorArg.path = patch->path);
-      //  if (EOF == sc || EOF == pc)
-      //    goto eofHandler;
-      //}
+    if (sc != pc || !charExclude(sc)) {
       sc = mUngetc(sc, src);
       pc = mUngetc(pc, patch);
       /* error checks should be after both ungets so each is attempted */

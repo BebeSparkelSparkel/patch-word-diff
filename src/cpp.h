@@ -57,14 +57,43 @@
  *
  * Note: Only works with 8 bit (<= 256) enums
  */
-#define TUPLE(x, y) (((int)(x) << 8) | ((int)(y) & 0xFF))
+#define TUPLE(x, y) \
+  ( ( ((int)(x) & 0x00FF) << 8 ) \
+  | ( ((int)(y) & 0x00FF) << 0 ) \
+  )
 
 /**
  * Enumeration 3 tuple
  *
  * Note: Only works with 5 bit (<= 32) enums
  */
-#define TUPLE3(x, y, z) (((int)(x) << 10) | (((int)(y) & 0x1F) << 5) | ((int)(z) & 0x1F))
+#define TUPLE3(x, y, z) \
+  ( ( ((int)(x) & 0x001F) << 10 ) \
+  | ( ((int)(y) & 0x001F) <<  5 ) \
+  | ( ((int)(z) & 0x001F) <<  0 ) \
+  )
+
+/**
+ * Enumeration 4 tuple
+ *
+ * Note: Only works with 6 bit (<= 16) enums
+ */
+#define TUPLE4(w, x, y, z) \
+  ( ( ((int)(w) & 0x000F) << 12 ) \
+  | ( ((int)(x) & 0x000F) <<  8 ) \
+  | ( ((int)(y) & 0x000F) <<  4 ) \
+  | ( ((int)(z) & 0x000F) <<  0 ) \
+  )
+
+#define FST4(x) (((x) >>  0) & 0x000F)
+#define SND4(x) (((x) >>  4) & 0x000F)
+#define THD4(x) (((x) >>  8) & 0x000F)
+#define FTH4(x) (((x) >> 12) & 0x000F)
+
+#define FST4_SET(x, y) ((((int)(x) & 0x000F) <<  0) | ((int)(y) & ~0x000F))
+#define SND4_SET(x, y) ((((int)(x) & 0x000F) <<  4) | ((int)(y) & ~0x00F0))
+#define THD4_SET(x, y) ((((int)(x) & 0x000F) <<  8) | ((int)(y) & ~0x0F00))
+#define FTH4_SET(x, y) ((((int)(x) & 0x000F) << 12) | ((int)(y) & ~0xF000))
 
 /**
  * Alias macros for readability
@@ -153,12 +182,21 @@
 #define CASE_RETURN(x, y, ...) case x: return y
 
 /**
- * Maximum value macro (compiler-dependent implementation)
+ * Maximum value macro
  */
 #ifdef CPP_DEV
 #define MAX(x, y) max(x, y)
 #else
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
+#endif
+
+/**
+ * Minimum value macro
+ */
+#ifdef CPP_DEV
+#define MIN(x, y) min(x, y)
+#else
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
 /*******************************************************************************

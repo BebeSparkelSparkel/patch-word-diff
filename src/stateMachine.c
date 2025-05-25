@@ -12,50 +12,85 @@
 
 char parseBuf[PARSE_BUF_SIZE];
 
-#define TRANSITION_TABLE(firstOrder, secondOrder, lagged) \
+#define TRANSITION_TABLE(firstOrder, secondOrder, thirdOrder, lagged) \
   firstOrder(PS_Start, PC_EOF, PS_EmptyPatch) \
-  firstOrder(PS_Start, PC_WhiteSpace, PS_EmptyPatch) \
-  firstOrder(PS_Start, PC_Tab, PS_EmptyPatch) \
-  firstOrder(PS_Start, PC_Space, PS_EmptyPatch) \
-  firstOrder(PS_Start, PC_LineFeed, PS_EmptyPatch) \
+  firstOrder(PS_Start, PC_Space, PS_WhiteSpacePatch) \
+  firstOrder(PS_Start, PC_Tab, PS_WhiteSpacePatch) \
+  firstOrder(PS_Start, PC_LineFeed, PS_WhiteSpacePatch) \
+  secondOrder(PS_Start, PS_WhiteSpacePatch, PC_EOF, PS_EmptyPatch) \
   firstOrder(PS_Start, PC_Git, PS_Git) \
   firstOrder(PS_Git, PC_Minus, PS_Diff) \
   firstOrder(PS_Diff, PC_Hunk, PS_Hunk) \
   firstOrder(PS_Hunk, PC_AddStart, PS_Add) \
-  firstOrder(PS_WhiteSpace, PC_AddStart, PS_Add) \
-  firstOrder(PS_Hunk, PC_Space, PS_WhiteSpace) \
-  firstOrder(PS_Add, PC_LineFeed, PS_Match) \
-  firstOrder(PS_Add, PC_Space, PS_WhiteSpace) \
-  secondOrder(PS_Add, PS_WhiteSpace, PC_None, PS_WriteWhiteSpace) \
-  firstOrder(PS_WriteWhiteSpace, PC_None, PS_Match) \
-  firstOrder(PS_Match, PC_LineFeed, PS_WhiteSpace) \
-  firstOrder(PS_Match, PC_EOF, PS_FinalizeSource) \
-  firstOrder(PS_WhiteSpace, PC_EOF, PS_FinalizeSource) \
   firstOrder(PS_FinalizeSource, PC_EOF, PS_ExitLoop) \
+  \
+  firstOrder(PS_Add, PC_LineFeed, PS_WhiteSpacePatch) \
+  secondOrder(PS_Add, PS_WhiteSpacePatch, PC_EOF, PS_FinalizeSource) \
+  \
+  firstOrder(PS_Hunk, PC_Space, PS_WhiteSpacePatch) \
+  firstOrder(PS_WhiteSpacePatch, PC_AddStart, PS_Add) \
+  firstOrder(PS_Add, PC_EOF, PS_FinalizeSource) \
+  \
+  firstOrder(PS_Add, PC_Space, PS_WhiteSpacePatch) \
+  secondOrder(PS_Add, PS_WhiteSpacePatch, PC_None, PS_Match) \
+  firstOrder(PS_Match, PC_EOF, PS_FinalizeSource) \
+  \
+  firstOrder(PS_Hunk, PC_RmStart, PS_Remove) \
+  firstOrder(PS_Remove, PC_LineFeed, PS_WhiteSpacePatch) \
+  secondOrder(PS_Remove, PS_WhiteSpacePatch, PC_EOF, PS_WhiteSpacePatch) /* clears whiteSpaceBuffer */ \
+  thirdOrder(PS_Remove, PS_WhiteSpacePatch, PS_WhiteSpacePatch, PC_EOF, PS_FinalizeSource) \
+  \
+  firstOrder(PS_Remove, PC_None, PS_WhiteSpaceSource) \
+  secondOrder(PS_Remove, PS_WhiteSpaceSource, PC_None, PS_WhiteSpaceSource) /* clears whiteSpaceBuffer */ \
+  thirdOrder(PS_Remove, PS_WhiteSpaceSource, PS_WhiteSpaceSource, PC_None, PS_Match) \
+  \
+  firstOrder(PS_Remove, PC_Space, PS_WhiteSpacePatch) \
+  secondOrder(PS_Remove, PS_WhiteSpacePatch, PC_None, PS_WhiteSpaceSource) \
+  thirdOrder(PS_Remove, PS_WhiteSpacePatch, PS_WhiteSpaceSource, PC_None, PS_Match) \
+  \
+  firstOrder(PS_Remove, PC_AddStart, PS_Add) \
+  \
+  firstOrder(PS_Add, PC_RmStart, PS_Remove) \
+  \
+  firstOrder(PS_Add, PC_None, PS_Match) \
+  \
+  firstOrder(PS_Match, PC_RmStart, PS_Remove) \
+  \
+  firstOrder(PS_Match, PC_AddStart, PS_Add) \
 
-#define FIRST_ORDER(state, control, newState) \
-  case TUPLE(state, control): setState(newState); break;
+#define FIRST_ORDER(currentState, control, newState) \
+  case TUPLE4(0, 0, currentState, control - MIN_PATCH_CONTROL): SET_STATE(newState); break;
+#define FIRST_ORDER_MASK 0x00FF
 
 #define SECOND_ORDER(previousState, currentState, control, newState) \
-  case TUPLE3(previousState, currentState, control): setState(newState); break;
+  case TUPLE4(0, previousState, currentState, control - MIN_PATCH_CONTROL): SET_STATE(newState); break;
+#define SECOND_ORDER_MASK 0x0FFF
 
-#define LAGGED(previousState, control, newState) \
-  case TUPLE(previousState, control): setState(newState); break;
+#define THIRD_ORDER(minusTwo, previousState, currentState, control, newState) \
+  case TUPLE4(minusTwo, previousState, currentState, control - MIN_PATCH_CONTROL): SET_STATE(newState); break;
+#define THIRD_ORDER_MASK 0xFFFF
 
-#define setState(s) (prevState = state, state = (s))
+#define SET_STATE(s) \
+  (state = ((((state & ~0x000F) | (int)(s) & 0x000F) << 4) & 0xFFF0))
+#define GET_CURRENT_STATE(s) SND4(s)
+
+#define CURRENT_STATE_MASK 0x00F0
+
+#define SET_CONTROL(control) (c = (control), state = FST4_SET(NORMALIZE_CONTROL(c), state))
 
 #define WRITE_WHITESPACE \
   { \
     c = fputs(parseBuf, *tmp); \
     ERROR_CONDITION(FileError, EOF == c, errorArg.path = tmpPath); \
-    *parseBuf = '\0'; \
+    DROP_WHITESPACE; \
   }
 
+#define DROP_WHITESPACE (parseBuf[0] = '\0')
+
+int constTrue(int c) {return 1;}
+
 enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP tmp, char *tmpPath) {
-  enum PatchControl control;
-  enum ParseState state     = PS_Start,
-                  prevState = PS_Start;
-  //enum WhiteSpace whitespace;
+  int state = TUPLE4(PS_Start, PS_Start, PS_Start, PC_None);
   enum ErrorId e;
   static struct GitHeader gitHeader;
   static struct DiffHeader diffHeader;
@@ -64,46 +99,53 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
   const char *s;
   int constTmpPath = tmpPath[0];
   const char *srcPath;
+  struct MFile *fileSelect;
 
   do {
     log(L_DebugMessage, logArg.message = "---- State Loop Start ----");
-    log(L_ParseState, logArg.parseState = state);
-    control = parsePatchControl(patch);
-    log(L_PatchControl, logArg.patchControl = control);
+
+    SET_CONTROL(parsePatchControl(patch));
+
+    log(L_State, logArg.state = state);
 
     /* Stateful Control */
-    switch (TUPLE3(prevState, state, control)) {
-      TRANSITION_TABLE(EMPTY, SECOND_ORDER, EMPTY);
+    switch (THIRD_ORDER_MASK & state) {
+      TRANSITION_TABLE(EMPTY, EMPTY, THIRD_ORDER, EMPTY);
       default:
-        switch (TUPLE(state, control)) {
-          TRANSITION_TABLE(FIRST_ORDER, EMPTY, EMPTY);
+        switch (SECOND_ORDER_MASK & state) {
+          TRANSITION_TABLE(EMPTY, SECOND_ORDER, EMPTY, EMPTY);
           default:
-            switch (TUPLE(prevState, control)) {
-              TRANSITION_TABLE(EMPTY, EMPTY, LAGGED);
+            switch (FIRST_ORDER_MASK & state) {
+              TRANSITION_TABLE(FIRST_ORDER, EMPTY, EMPTY, EMPTY);
               default:
                 TODO("Transition Table\n"
+                     "\t- 2      State: %s\n"
                      "\tPrevious State: %s\n"
                      "\tCurrent  State: %s\n"
                      "\tControl:        %s\n"
-                     "\tL %d, C %d\n\t",
-                     parseState2enumStr(prevState),
-                     parseState2enumStr(state),
-                     patchControl2enumStr(control),
+                     "\tPatch:  L %3d, C %2d\n"
+                     "\tSource: L %3d, C %2d\n\t",
+                     parseState2enumStr(FTH4(state)),
+                     parseState2enumStr(THD4(state)),
+                     parseState2enumStr(SND4(state)),
+                     patchControl2enumStr(GET_CONTROL(state)),
                      patch->line,
-                     patch->column
+                     patch->column,
+                     src->line,
+                     src->column
                     );
             }
         }
     }
 
     /* State Action */
-    log(L_ParseState, logArg.parseState = state);
-    switch (state) {
+    log(L_ParseState, logArg.parseState = GET_CURRENT_STATE(state));
+    switch (GET_CURRENT_STATE(state)) {
+      case PS_Start:
+        DROP_WHITESPACE;
+        break;
       case PS_EmptyPatch:
         ERROR_SET(EmptyPatchFile, errorArg.path = patch->path);
-        break;
-      case PS_DropWhiteSpace:
-        ERROR_CHECK(mSkipWhitespace(patch));
         break;
       case PS_Git:
         PARSE_GIT_HEADER;
@@ -111,6 +153,11 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
       case PS_Diff:
         PARSE_DIFF_HEADER;
         srcPath = diffHeader.pathMinus;
+        ERROR_CONDITION(
+          DifferingSourceUpdatePaths,
+          strncmp(srcPath, diffHeader.pathPlus, PATH_MAX) || (*gitHeader.pathA && (strncmp(srcPath, gitHeader.pathA, PATH_MAX) || strncmp(srcPath, gitHeader.pathB, PATH_MAX))),
+          errorArg.pathsAB = ((struct PathsAB){ diffHeader.pathMinus, diffHeader.pathPlus })
+          );
         OPEN_READ(src, srcPath);
         if (constTmpPath) {
           *tmp = fopen(tmpPath, "w");
@@ -121,31 +168,41 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
         break;
       case PS_Hunk:
         ERROR_CHECK(parseHunkHeader(patch, &hunkHeader));
-        ERROR_CHECK(matchAndCopy(src, patch, *tmp, tmpPath));
-        *parseBuf = '\0';
+        ERROR_CHECK(matchAndCopy(src, patch, *tmp, tmpPath, constTrue));
+        DROP_WHITESPACE;
         break;
       case PS_Match:
-        ERROR_CHECK(matchAndCopy(src, patch, *tmp, tmpPath));
+        WRITE_WHITESPACE;
+        ERROR_CHECK(matchAndCopy(src, patch, *tmp, tmpPath, constTrue));
         break;
       case PS_Add:
         WRITE_WHITESPACE;
         ERROR_CHECK(copyUntilClose(patch, *tmp, tmpPath));
+        ERROR_CHECK(matchAndCopy(src, patch, *tmp, tmpPath, &isspace));
         break;
-      case PS_WriteWhiteSpace:
-        WRITE_WHITESPACE;
+      case PS_Remove:
+        ERROR_CHECK(mSkipWhitespace(src));
+        ERROR_CHECK(mSkipWhitespace(patch));
+        ERROR_CHECK(matchAndDiscardUntilClose(src, patch));
         break;
-      case PS_WhiteSpace:
+      case PS_WhiteSpacePatch:
+        fileSelect = patch;
+        goto whiteSpace;
+      case PS_WhiteSpaceSource:
+        fileSelect = src;
+        whiteSpace:
         i = 0;
         do {
-          c = mGetCOrEOF(patch);
+          c = mGetCOrEOF(fileSelect);
           parseBuf[i++] = c;
-        } while (isspace(c) && i < sizeof(parseBuf));
+        } while (isspace(c) && sizeof(parseBuf) > i);
         ERROR_CONDITION(ParseFail_BufferOverflow, sizeof(parseBuf) <= i, );
         parseBuf[i - 1] = '\0';
         if (EOF != c) {
-          c = mUngetc(c, patch);
-          ERROR_CONDITION(FileError, EOF == c, errorArg.path = patch->path);
+          c = mUngetc(c, fileSelect);
+          ERROR_CONDITION(FileError, EOF == c, errorArg.path = fileSelect->path);
         }
+        log(L_WhiteSpace, logArg.whiteSpaceBuffer = parseBuf);
         break;
       case PS_FinalizeSource:
         WRITE_WHITESPACE;
@@ -176,32 +233,7 @@ enum ErrorId stateMachine(struct MFile CP patch, struct MFile CP src, FILE * CP 
         TODO("state %s", parseState2enumStr(state)); break;
     }
 
-    ///* Historical State */
-    //switch (TUPLE(prevState, state)) {
-    //  TRANSITION(PS_Start, PS_DropWhiteSpace, PS_Start);
-    //  NO_TRANSITION(PS_Start, PS_Git);
-    //  NO_TRANSITION(PS_Git,   PS_Diff);
-    //  NO_TRANSITION(PS_Diff,  PS_Hunk);
-    //  NO_TRANSITION(PS_Hunk,  PS_Add);
-    //  NO_TRANSITION(PS_Hunk,  PS_WhiteSpace);
-    //  NO_TRANSITION(PS_Match, PS_WhiteSpace);
-    //  NO_TRANSITION(PS_Add,   PS_Match);
-    //  NO_TRANSITION(PS_Match, PS_Match);
-    //  NO_TRANSITION(PS_Add,   PS_FinalizeSource);
-    //  NO_TRANSITION(PS_WriteWhiteSpace,   PS_FinalizeSource);
-    //  NO_TRANSITION(PS_WhiteSpace, PS_Add);
-    //  NO_TRANSITION(PS_WhiteSpace, PS_WriteWhiteSpace);
-    //  NO_TRANSITION(PS_FinalizeSource, PS_ExitLoop);
-    //  default:
-    //    TODO("History Transition Table\n"
-    //         "\tPrevious State: %s\n"
-    //         "\tCurrent State:  %s\n\t",
-    //         parseState2enumStr(prevState),
-    //         parseState2enumStr(state)
-    //        );
-    //}
-
-  } while (state);
+  } while (CURRENT_STATE_MASK & state);
   return Success;
 }
 

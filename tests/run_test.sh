@@ -55,7 +55,11 @@ elif [ $exit_code -eq 2 ]; then
   echo -e "${RED}FAILED${RESET}: Unimplemented"
   exit 1
 elif [ $expected_fail -eq 1 ]; then
-  if [ $exit_code -ne 0 ]; then
+  if [ $exit_code -eq 139 ] || [ $exit_code -eq 134 ] || [ $exit_code -eq 136 ] || [ $exit_code -eq 137 ] || [ $exit_code -eq 138 ]; then
+    prettyPrintFiles
+    echo -e "${RED}FAILED${RESET} $test_dir: Critical failure (exit code $exit_code) - segmentation fault or similar error"
+    exit 1
+  elif [ $exit_code -ne 0 ]; then
     echo -e "${GREEN}PASSED${RESET}: Test failed as expected with exit code $exit_code"
     exit 0
   else

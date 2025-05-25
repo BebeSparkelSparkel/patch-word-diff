@@ -1,0 +1,1 @@
+Complex newline handling - defer to post-MVP

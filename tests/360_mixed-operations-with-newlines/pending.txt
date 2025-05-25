@@ -1,0 +1,1 @@
+Complex mixed operations - defer to post-MVP

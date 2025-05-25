@@ -29,7 +29,7 @@ echo
 if [ -f "${TEST_DIR}/source.txt" ]; then
   echo -e "${BOLD}${BLUE}Source:${RESET}"
   echo -e "${CYAN}------------------${RESET}"
-  sed 's/^/  /' "${TEST_DIR}/source.txt"
+  cat -n "${TEST_DIR}/source.txt"
   echo -e "${CYAN}------------------${RESET}"
   echo
 else
@@ -40,7 +40,7 @@ fi
 if [ -f "${TEST_DIR}/patch.txt" ]; then
   echo -e "${BOLD}${BLUE}Patch:${RESET}"
   echo -e "${CYAN}------------------${RESET}"
-  sed 's/^/  /' "${TEST_DIR}/patch.txt"
+  cat -n "${TEST_DIR}/patch.txt"
   echo -e "${CYAN}------------------${RESET}"
   echo
 else
@@ -51,7 +51,7 @@ fi
 if [ -f "${TEST_DIR}/expect.txt" ]; then
   echo -e "${BOLD}${BLUE}Expected Result:${RESET}"
   echo -e "${CYAN}------------------${RESET}"
-  sed 's/^/  /' "${TEST_DIR}/expect.txt"
+  cat -n "${TEST_DIR}/expect.txt"
   echo -e "${CYAN}------------------${RESET}"
   echo
 else
